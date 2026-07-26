@@ -720,6 +720,88 @@ def load_oos_strategies(
     ]
 
 
+def format_journal_summary(journal: Mapping[str, Any] | Path | str) -> str:
+    """Human-readable snapshot of a ``paper_trades.json`` journal."""
+    if isinstance(journal, (str, Path)):
+        path = Path(journal)
+        if not path.exists():
+            return f"No journal found at {path}"
+        raw = json.loads(path.read_text(encoding="utf-8"))
+    else:
+        raw = dict(journal)
+        path = None
+
+    opens = list(raw.get("open_positions") or [])
+    closed = list(raw.get("closed_positions") or [])
+    fees_paid = sum(float(p.get("fees") or 0.0) for p in opens + closed)
+    exit_fees = sum(float(p.get("exit_fees") or 0.0) for p in closed)
+    total_fees = fees_paid + exit_fees
+    realized = float(raw.get("realized_pnl") or 0.0)
+    unrealized = float(raw.get("unrealized_pnl") or 0.0)
+    cash = float(raw.get("cash") or 0.0)
+    equity = float(raw.get("equity") or 0.0)
+    bankroll = float(raw.get("bankroll_initial") or 0.0)
+    net = equity - bankroll if bankroll else realized + unrealized
+
+    lines: list[str] = []
+    lines.append("=" * 72)
+    lines.append(" PAPER TRADE SUMMARY")
+    if path is not None:
+        lines.append(f" journal: {path}")
+    lines.append(f" updated: {raw.get('updated_at', 'n/a')}")
+    lines.append("=" * 72)
+    lines.append(
+        f" cash=${cash:,.2f}  equity=${equity:,.2f}  bankroll=${bankroll:,.2f}"
+    )
+    lines.append(
+        f" realized=${realized:,.2f}  unrealized=${unrealized:,.2f}  "
+        f"net_vs_bankroll=${net:,.2f}"
+    )
+    lines.append(
+        f" fills={raw.get('fills', 0)}  signals={raw.get('signals_fired', 0)}  "
+        f"ticks={raw.get('ticks_seen', 0)}  resolutions={raw.get('resolutions', 0)}"
+    )
+    lines.append(
+        f" fees: entry=${fees_paid:,.4f}  exit=${exit_fees:,.4f}  "
+        f"total=${total_fees:,.4f}  "
+        f"category={raw.get('fee_category', 'n/a')}  "
+        f"rate={raw.get('fee_rate', 'n/a')}  dynamic={raw.get('use_dynamic_fees', 'n/a')}"
+    )
+
+    lines.append("-" * 72)
+    lines.append(f" open positions ({len(opens)}):")
+    if not opens:
+        lines.append("   (none)")
+    else:
+        for p in opens:
+            tid = str(p.get("token_id") or "")[:12]
+            lines.append(
+                f"   [{p.get('position_id')}] {tid}…  "
+                f"fill={float(p.get('entry_price_fill') or 0):.3f}  "
+                f"mark={float(p.get('mark_price') or 0):.3f}  "
+                f"fee=${float(p.get('fees') or 0):.4f}  "
+                f"uPnL=${float(p.get('unrealized_pnl') or 0):+.2f}  "
+                f"netEV={float(p.get('entry_ev_pct_net') or 0):.1f}pp"
+            )
+
+    lines.append("-" * 72)
+    lines.append(f" closed positions ({len(closed)}):")
+    if not closed:
+        lines.append("   (none)")
+    else:
+        for p in closed[-15:]:
+            tid = str(p.get("token_id") or "")[:12]
+            lines.append(
+                f"   [{p.get('position_id')}] {tid}…  "
+                f"status={p.get('status')}  reason={p.get('exit_reason')}  "
+                f"exit={p.get('exit_price')}  "
+                f"fees=${float(p.get('fees') or 0)+float(p.get('exit_fees') or 0):.4f}  "
+                f"PnL=${float(p.get('realized_pnl') or 0):+.2f}"
+            )
+    lines.append("=" * 72)
+    return "\n".join(lines)
+
+
 def format_dashboard(
     trader: PaperTrader,
     *,

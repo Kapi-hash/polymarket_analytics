@@ -184,7 +184,12 @@ def _cmd_paper_trade(args: argparse.Namespace) -> int:
         PaperConfig,
         PaperTrader,
         format_dashboard,
+        format_journal_summary,
     )
+
+    if getattr(args, "summary", False):
+        print(format_journal_summary(Path(args.journal)))
+        return 0
 
     # --min-ev 0.10 means 10 percentage points (matches OOS report units)
     min_ev_pp = float(args.min_ev)
@@ -487,6 +492,11 @@ def build_parser() -> argparse.ArgumentParser:
         type=Path,
         default=DEFAULT_PAPER_JOURNAL,
         help=f"Paper trade journal JSON (default: {DEFAULT_PAPER_JOURNAL})",
+    )
+    paper_p.add_argument(
+        "--summary",
+        action="store_true",
+        help="Print journal summary (open positions, fees, PnL) and exit",
     )
     paper_p.add_argument("--bankroll", type=float, default=10_000.0)
     paper_p.add_argument(
