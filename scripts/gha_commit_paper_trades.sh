@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Commit and push paper-trade journal artifacts from GitHub Actions.
+# Commit and push paper/swing journal artifacts from GitHub Actions.
 # Exits 0 when there is nothing new to commit (empty diff is not a failure).
 #
 # Usage: ./scripts/gha_commit_paper_trades.sh [branch]
@@ -14,20 +14,21 @@ git config user.name "github-actions[bot]"
 git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
 mkdir -p data
-PATHS=(
-  data/paper_trades.json
-  data/paper_trader.log
-)
 
 EXISTING=()
-for p in "${PATHS[@]}"; do
-  if [[ -f "$p" ]]; then
-    EXISTING+=("$p")
-  fi
-done
+while IFS= read -r -d '' f; do
+  EXISTING+=("$f")
+done < <(
+  find data -maxdepth 1 -type f \( \
+    -name 'paper_trades*.json' \
+    -o -name 'swing_trades*.json' \
+    -o -name 'paper_trader.log' \
+    -o -name 'swing_trader.log' \
+  \) -print0 2>/dev/null | sort -z
+)
 
 if [[ ${#EXISTING[@]} -eq 0 ]]; then
-  echo "No paper-trade artifacts found; nothing to commit."
+  echo "No paper/swing trade artifacts found; nothing to commit."
   exit 0
 fi
 
@@ -39,11 +40,11 @@ if git diff --staged --quiet; then
 fi
 
 git commit -m "$(cat <<'EOF'
-chore: update paper trade journal [skip ci]
+chore: update multi-profile paper/swing journals [skip ci]
 
-Automated GitHub Actions paper-trader snapshot.
+Automated GitHub Actions forward-test snapshot.
 EOF
 )"
 
 git push origin "HEAD:${BRANCH}"
-echo "Pushed paper trade journal update to ${BRANCH}."
+echo "Pushed journal updates to ${BRANCH}: ${EXISTING[*]}"

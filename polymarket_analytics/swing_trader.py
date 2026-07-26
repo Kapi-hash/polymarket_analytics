@@ -13,7 +13,15 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Deque, Literal, Mapping, Sequence
 
-StrategyName = Literal["mean_reversion", "momentum", "book_imbalance"]
+StrategyName = Literal[
+    "mean_reversion",
+    "momentum",
+    "book_imbalance",
+    "confluence",
+    "signal_liquidity",
+    "signal_ema_cross",
+    "signal_rsi",
+]
 
 DEFAULT_SWING_JOURNAL = Path("data/swing_trades.json")
 
@@ -179,13 +187,22 @@ class SwingConfig:
     book_price_hi: float = 0.80
     # Exits
     take_profit_pct: float = 0.20  # +20% price move default
+    take_profit_atr_mult: float = 2.0  # TP = entry + k*ATR
+    stop_loss_pct: float = 0.10  # -10% hard cut
+    stop_loss_atr_mult: float = 1.0  # SL = entry - k*ATR
     atr_period: int = 14
-    atr_stop_mult: float = 2.0
-    stall_hours: float = 48.0
+    atr_stop_mult: float = 2.0  # trailing stop multiplier
+    stall_hours: float = 36.0
     use_bb_take_profit: bool = True
     max_open_positions: int = 15
     cooldown_sec: float = 300.0
     history_len: int = 200
+    # Multi-signal confluence (profile_swing_confluence)
+    require_confluence: bool = False
+    min_confluence: int = 2
+    confluence_rsi: float = 30.0
+    confluence_volume_usd: float = 25_000.0
+    confluence_book_min: float = 2.5
 
 
 @dataclass
@@ -331,7 +348,9 @@ def evaluate_mean_reversion(
     if ema20 is not None:
         target = max(target, ema20)
     atr = ind.atr if ind.atr is not None else bar.mid * 0.03
-    stop = max(bar.mid - cfg.atr_stop_mult * atr, 0.01)
+    target, stop = _tp_sl_levels(bar.mid, atr, cfg)
+    if ema20 is not None:
+        target = max(target, min(ema20, 0.99))
     if target <= bar.mid:
         target = min(bar.mid * (1.0 + cfg.take_profit_pct), 0.99)
     return SwingSignal(
@@ -393,10 +412,9 @@ def evaluate_momentum(
         return None
 
     atr = ind.atr if ind.atr is not None else bar.mid * 0.03
-    target = min(bar.mid * (1.0 + cfg.take_profit_pct), 0.99)
+    target, stop = _tp_sl_levels(bar.mid, atr, cfg)
     if cfg.use_bb_take_profit and ind.bb_upper is not None:
         target = max(target, min(ind.bb_upper, 0.99))
-    stop = max(bar.mid - cfg.atr_stop_mult * atr, 0.01)
     return SwingSignal(
         strategy="momentum",
         token_id=token_id,
@@ -437,10 +455,7 @@ def evaluate_book_imbalance(
     if imbalance < cfg.book_imbalance_min:
         return None
     atr = ind.atr if ind.atr is not None else bar.mid * 0.03
-    target = min(bar.mid * (1.0 + cfg.take_profit_pct), 0.99)
-    if cfg.use_bb_take_profit and ind.bb_upper is not None:
-        target = max(target, min(ind.bb_upper, 0.99))
-    stop = max(bar.mid - cfg.atr_stop_mult * atr, 0.01)
+    target, stop = _tp_sl_levels(bar.mid, atr, cfg)
     return SwingSignal(
         strategy="book_imbalance",
         token_id=token_id,
@@ -454,6 +469,96 @@ def evaluate_book_imbalance(
             "bid_depth": bar.bid_depth,
             "ask_depth": bar.ask_depth,
             "imbalance": imbalance,
+        },
+    )
+
+
+def _tp_sl_levels(entry: float, atr: float, cfg: SwingConfig) -> tuple[float, float]:
+    """Dynamic TP/SL from ATR multiples and pct floors/ceilings."""
+    tp_atr = entry + cfg.take_profit_atr_mult * atr
+    tp_pct = entry * (1.0 + cfg.take_profit_pct)
+    target = min(max(tp_atr, tp_pct), 0.99)
+    sl_atr = entry - cfg.stop_loss_atr_mult * atr
+    sl_pct = entry * (1.0 - abs(cfg.stop_loss_pct))
+    stop = max(min(sl_atr, sl_pct), 0.01)
+    return target, stop
+
+
+def detect_confluence_legs(
+    bar: TokenBar,
+    ind: SwingIndicators,
+    series: TokenSeries,
+    cfg: SwingConfig,
+) -> list[tuple[StrategyName, str]]:
+    """
+    Return active confluence legs:
+
+    A — buy-side depth > confluence_book_min × sell-side near mid
+    B — 5 EMA crosses above 20 EMA
+    C — RSI < confluence_rsi with liquidity/volume > confluence_volume_usd
+    """
+    legs: list[tuple[StrategyName, str]] = []
+    # Signal A: liquidity / whales (book imbalance)
+    if (
+        bar.bid_depth is not None
+        and bar.ask_depth is not None
+        and bar.ask_depth > 0
+        and cfg.book_price_lo <= bar.mid <= cfg.book_price_hi
+    ):
+        imb = bar.bid_depth / bar.ask_depth
+        if imb >= cfg.confluence_book_min:
+            legs.append(("signal_liquidity", f"bid/ask={imb:.2f}x"))
+
+    # Signal B: EMA crossover
+    if ind.ema_fast is not None and ind.ema_slow is not None and ind.ema_fast > ind.ema_slow:
+        if len(series.closes) >= cfg.ema_slow + 2:
+            prev_f = _ema(series.closes[:-1], cfg.ema_fast)
+            prev_s = _ema(series.closes[:-1], cfg.ema_slow)
+            if prev_f is not None and prev_s is not None and prev_f <= prev_s:
+                legs.append(("signal_ema_cross", "ema5>ema20 cross"))
+            elif ind.ema_fast > ind.ema_slow * 1.001:
+                # Allow sustained bullish stack as confirmation
+                legs.append(("signal_ema_cross", "ema5>ema20"))
+
+    # Signal C: oversold RSI on liquid contract
+    liq = bar.liquidity_usd if bar.liquidity_usd is not None else 0.0
+    vol_ok = liq >= cfg.confluence_volume_usd or bar.volume >= cfg.confluence_volume_usd
+    if ind.rsi is not None and ind.rsi < cfg.confluence_rsi and vol_ok:
+        legs.append(("signal_rsi", f"rsi={ind.rsi:.1f}<{cfg.confluence_rsi:g}"))
+    return legs
+
+
+def evaluate_confluence(
+    token_id: str,
+    condition_id: str,
+    bar: TokenBar,
+    ind: SwingIndicators,
+    series: TokenSeries,
+    cfg: SwingConfig,
+) -> SwingSignal | None:
+    """Enter only when ≥ min_confluence confirming signals fire."""
+    legs = detect_confluence_legs(bar, ind, series, cfg)
+    if len(legs) < cfg.min_confluence:
+        return None
+    atr = ind.atr if ind.atr is not None else bar.mid * 0.03
+    target, stop = _tp_sl_levels(bar.mid, atr, cfg)
+    reasons = [r for _, r in legs]
+    return SwingSignal(
+        strategy="confluence",
+        token_id=token_id,
+        condition_id=condition_id,
+        ts=bar.ts,
+        entry_price=bar.mid,
+        target_price=target,
+        stop_price=stop,
+        reason=f"confluence[{len(legs)}]: " + "; ".join(reasons),
+        indicators={
+            "n_legs": len(legs),
+            "legs": [name for name, _ in legs],
+            "rsi": ind.rsi,
+            "ema_fast": ind.ema_fast,
+            "ema_slow": ind.ema_slow,
+            "atr": atr,
         },
     )
 
@@ -530,21 +635,28 @@ class SwingTrader:
             "mean_reversion",
             "momentum",
             "book_imbalance",
+            "confluence",
         }
         candidates: list[SwingSignal] = []
-        if "mean_reversion" in enabled:
+        if "confluence" in enabled or self.config.require_confluence:
+            s = evaluate_confluence(
+                token_id, condition_id, bar, ind, series, self.config
+            )
+            if s:
+                candidates.append(s)
+        if "mean_reversion" in enabled and not self.config.require_confluence:
             s = evaluate_mean_reversion(
                 token_id, condition_id, bar, ind, series, self.config
             )
             if s:
                 candidates.append(s)
-        if "momentum" in enabled:
+        if "momentum" in enabled and not self.config.require_confluence:
             s = evaluate_momentum(
                 token_id, condition_id, bar, ind, series, self.config
             )
             if s:
                 candidates.append(s)
-        if "book_imbalance" in enabled:
+        if "book_imbalance" in enabled and not self.config.require_confluence:
             s = evaluate_book_imbalance(
                 token_id, condition_id, bar, ind, self.config
             )

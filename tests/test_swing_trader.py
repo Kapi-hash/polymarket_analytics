@@ -12,6 +12,8 @@ from polymarket_analytics.swing_trader import (
     TokenSeries,
     compute_hurst,
     compute_rsi,
+    detect_confluence_legs,
+    evaluate_confluence,
     evaluate_mean_reversion,
     evaluate_momentum,
     inject_swing_demo_bars,
@@ -203,3 +205,67 @@ def test_cli_swing_trade_demo(tmp_path: Path) -> None:
     )
     assert rc == 0
     assert journal.exists()
+
+
+def test_confluence_entry_and_36h_time_exit(tmp_path: Path) -> None:
+    cfg = SwingConfig(
+        require_confluence=True,
+        min_confluence=2,
+        confluence_book_min=2.5,
+        confluence_rsi=30.0,
+        confluence_volume_usd=25_000.0,
+        stall_hours=36.0,
+        take_profit_pct=0.20,
+        take_profit_atr_mult=2.0,
+        stop_loss_pct=0.10,
+        stop_loss_atr_mult=1.0,
+        min_ev_pct=0.0,
+        cooldown_sec=0.0,
+    )
+    series = TokenSeries(maxlen=200)
+    for i in range(50):
+        series.add(TokenBar(ts=float(i), mid=0.55 - 0.007 * i, liquidity_usd=80_000.0))
+    ind = series.indicators(cfg)
+    bar = TokenBar(
+        ts=50.0,
+        mid=series.closes[-1],
+        liquidity_usd=80_000.0,
+        bid_depth=40_000.0,
+        ask_depth=10_000.0,
+        volume=30_000.0,
+    )
+    assert len(detect_confluence_legs(bar, ind, series, cfg)) >= 2
+    sig = evaluate_confluence("tok", "cond", bar, ind, series, cfg)
+    assert sig is not None
+
+    trader = SwingTrader(config=cfg, journal_path=tmp_path / "c.json")
+    for i in range(50):
+        trader.on_bar(
+            "tok",
+            "cond",
+            TokenBar(
+                ts=float(i),
+                mid=0.55 - 0.007 * i,
+                liquidity_usd=80_000.0,
+                bid_depth=10.0,
+                ask_depth=10.0,
+            ),
+            strategies=("confluence",),
+        )
+    # Confluence bar should open a position
+    trader.on_bar("tok", "cond", bar, strategies=("confluence",))
+    assert any(p.status == "open" and p.strategy == "confluence" for p in trader.positions)
+
+    # 36h time exit without TP/SL
+    open_pos = next(p for p in trader.positions if p.status == "open")
+    open_pos.target_price = 0.99
+    open_pos.stop_price = 0.01
+    open_pos.trailing_stop = 0.01
+    trader.on_bar(
+        "tok",
+        "cond",
+        TokenBar(ts=open_pos.entry_ts + 36 * 3600 + 1, mid=open_pos.entry_price, liquidity_usd=80_000.0),
+        strategies=(),
+    )
+    closed = next(p for p in trader.positions if p.position_id == open_pos.position_id)
+    assert closed.status == "time_decay"

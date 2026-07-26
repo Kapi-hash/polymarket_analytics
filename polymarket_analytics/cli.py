@@ -192,6 +192,20 @@ def _cmd_paper_trade(args: argparse.Namespace) -> int:
         print(format_journal_summary(Path(args.journal)))
         return 0
 
+    if getattr(args, "compare", False):
+        from polymarket_analytics.profiles import (
+            format_profile_leaderboard,
+            load_profile_journals,
+        )
+
+        rows = load_profile_journals(Path(args.journal).parent if args.journal else None)
+        print(format_profile_leaderboard(rows))
+        print(json.dumps({"ok": True, "mode": "compare", "profiles": rows}, indent=2, default=str))
+        return 0
+
+    if getattr(args, "multi_profile", False):
+        return _cmd_multi_profile_paper(args)
+
     # --min-ev 0.10 means 10 percentage points (matches OOS report units)
     min_ev_pp = float(args.min_ev)
     if min_ev_pp <= 1.0:
@@ -310,6 +324,115 @@ def _cmd_paper_trade(args: argparse.Namespace) -> int:
         return 0
 
     return int(asyncio.run(_run_live()))
+
+
+def _cmd_multi_profile_paper(args: argparse.Namespace) -> int:
+    """Forward-test all incubator profiles on demo bars or live ticks."""
+    from polymarket_analytics.live_feed import (
+        LiveFeatureEngine,
+        MarketWebSocketFeed,
+        TopOfBook,
+        fetch_active_token_ids,
+        inject_demo_ticks,
+    )
+    from polymarket_analytics.profiles import (
+        MultiProfileIncubator,
+        format_profile_leaderboard,
+    )
+    from polymarket_analytics.swing_trader import TokenBar, inject_swing_demo_bars
+
+    min_ev_pp = float(args.min_ev)
+    if min_ev_pp <= 1.0:
+        min_ev_pp *= 100.0
+
+    data_dir = Path(args.journal).parent if args.journal else ROOT / "data"
+    inc = MultiProfileIncubator.create(
+        bankroll=args.bankroll,
+        min_ev_pct=min_ev_pp,
+        data_dir=data_dir,
+    )
+
+    if args.demo:
+        # Shared synthetic path covering whale mid-bucket + swing setups
+        engine = LiveFeatureEngine()
+        for feat in inject_demo_ticks(engine, n=max(args.demo_ticks, 40), base_price=0.45):
+            # Attach synthetic book for confluence / imbalance
+            feat = type(feat)(
+                **{
+                    **feat.__dict__,
+                    "best_bid": feat.price - 0.01,
+                    "best_ask": feat.price + 0.005,
+                }
+            )
+            inc.on_features(feat)
+            time.sleep(args.demo_sleep)
+        for token_id, condition_id, bar in inject_swing_demo_bars(n=max(args.demo_ticks, 60)):
+            inc.on_bar(token_id, condition_id, bar)
+            time.sleep(args.demo_sleep)
+        inc.persist_all()
+        rows = inc.comparison_rows()
+        print(format_profile_leaderboard(rows))
+        print(json.dumps({"ok": True, "mode": "multi-demo", "profiles": rows}, indent=2, default=str))
+        return 0
+
+    async def _run() -> int:
+        token_ids = list(args.token_id) if args.token_id else []
+        if not token_ids:
+            try:
+                token_ids = fetch_active_token_ids(limit=args.n_markets)
+            except Exception as exc:
+                print(f"Failed to fetch markets: {exc}", file=sys.stderr)
+                return 1
+        engine = LiveFeatureEngine()
+        books: dict[str, TopOfBook] = {}
+
+        def _on_feat(feat) -> None:
+            book = books.get(feat.token_id)
+            if book is not None:
+                feat = type(feat)(
+                    **{
+                        **feat.__dict__,
+                        "best_bid": book.best_bid,
+                        "best_ask": book.best_ask,
+                    }
+                )
+            inc.on_features(feat)
+
+        feed = MarketWebSocketFeed(token_ids, feature_engine=engine, on_features=_on_feat)
+        _orig = feed.handle_message
+
+        def _wrapped(raw: str | bytes):
+            text = raw.decode() if isinstance(raw, bytes) else str(raw)
+            if text.strip() and text.strip().upper() not in {"PING", "PONG"}:
+                try:
+                    payload = json.loads(text)
+                except json.JSONDecodeError:
+                    payload = None
+                if payload is not None:
+                    from polymarket_analytics.live_feed import parse_market_event
+
+                    for item in parse_market_event(payload):
+                        if isinstance(item, TopOfBook):
+                            books[item.token_id] = item
+            return _orig(raw)
+
+        feed.handle_message = _wrapped  # type: ignore[method-assign]
+        end = time.time() + float(args.duration)
+        try:
+            async for _ in feed.stream():
+                if time.time() >= end:
+                    feed.stop()
+                    break
+        except KeyboardInterrupt:
+            feed.stop()
+        feed.stop()
+        inc.persist_all()
+        rows = inc.comparison_rows()
+        print(format_profile_leaderboard(rows))
+        print(json.dumps({"ok": True, "mode": "multi-live", "profiles": rows}, indent=2, default=str))
+        return 0
+
+    return int(asyncio.run(_run()))
 
 
 def _cmd_swing_trade(args: argparse.Namespace) -> int:
@@ -648,6 +771,16 @@ def build_parser() -> argparse.ArgumentParser:
         "--summary",
         action="store_true",
         help="Print journal summary (open positions, fees, PnL) and exit",
+    )
+    paper_p.add_argument(
+        "--compare",
+        action="store_true",
+        help="Print multi-profile forward-test leaderboard from journals",
+    )
+    paper_p.add_argument(
+        "--multi-profile",
+        action="store_true",
+        help="Route ticks through all incubator profiles (isolated $10k bankrolls)",
     )
     paper_p.add_argument("--bankroll", type=float, default=10_000.0)
     paper_p.add_argument(

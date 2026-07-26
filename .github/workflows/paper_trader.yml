@@ -39,16 +39,18 @@ jobs:
           python3 -m pip install --upgrade pip
           python3 -m pip install -r requirements.txt
 
-      - name: Run paper trader (5 hours)
-        # Live WS feed; journal written to data/paper_trades.json
+      - name: Run multi-profile paper trader (5 hours)
+        # Live WS feed routed through all incubator profiles.
+        # Journals: data/paper_trades_{whale,rsi,momentum,swing}.json
         # Simulated fills only — never submits real orders.
         run: |
           mkdir -p data
           set -o pipefail
           python3 -m polymarket_analytics paper-trade \
+            --multi-profile \
             --min-ev 0.10 \
             --duration 18000 \
-            --journal data/paper_trades.json \
+            --journal data/paper_trades_whale.json \
             --oos-report data/oos_edge_report.json \
             2>&1 | tee data/paper_trader.log
         continue-on-error: true

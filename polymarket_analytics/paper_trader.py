@@ -869,3 +869,24 @@ def format_dashboard(
         lines.extend(extra_lines)
     lines.append("=" * 72)
     return "\n".join(lines)
+
+
+def route_features_to_profiles(feat: LiveFeatures, *, data_dir: Path | None = None):
+    """
+    Fan out one live tick to every incubator profile (isolated bankrolls).
+
+    Thin adapter so the paper-trade path can share the Multi-Profile Forward
+    Testing incubator without importing profiles at module load time.
+    """
+    from polymarket_analytics.profiles import MultiProfileIncubator
+
+    # Prefer a process-wide singleton when callers reuse the same data_dir
+    key = str(data_dir) if data_dir is not None else "__default__"
+    cache: dict[str, Any] = getattr(route_features_to_profiles, "_cache", {})
+    inc = cache.get(key)
+    if inc is None:
+        inc = MultiProfileIncubator.create(data_dir=data_dir)
+        cache[key] = inc
+        setattr(route_features_to_profiles, "_cache", cache)
+    inc.on_features(feat)
+    return inc
