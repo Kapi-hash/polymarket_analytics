@@ -1,0 +1,24 @@
+{
+  "total": 66,
+  "by_category": {
+    "signal/feature": 13,
+    "entry": 18,
+    "lifecycle": 6,
+    "backtest/validation": 2,
+    "fee": 5,
+    "execution": 2,
+    "risk": 7,
+    "exit": 8,
+    "microstructure": 2,
+    "data/ingest": 1,
+    "CLI/config": 1,
+    "exogenous": 1
+  },
+  "by_status": {
+    "Active": 56,
+    "Hardcoded": 1,
+    "Partially wired": 3,
+    "Conflicting": 5,
+    "Declared but unused": 1
+  }
+}

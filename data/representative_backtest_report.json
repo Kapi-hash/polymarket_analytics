@@ -1,0 +1,182 @@
+{
+  "ok": true,
+  "mode": "representative_validation_backtest",
+  "full_sweep": false,
+  "fee_model_version": "2026-07-polymarket-v1",
+  "logit_edge_example": 0.40134139092430265,
+  "edge": {
+    "n": 21,
+    "empirical_win_rate": 0.6666666666666666,
+    "implied_win_rate": 0.43999999999999995,
+    "ev_pct": 22.666666666666668,
+    "params": {
+      "price_bucket": "0.40-0.50",
+      "min_volume_spike": null,
+      "min_whale_ratio": 3.0,
+      "require_price_volume_divergence": false,
+      "momentum_1h": "any",
+      "momentum_6h": "any",
+      "max_time_to_resolution_hours": null,
+      "side": "BUY"
+    },
+    "label": "bucket=0.40-0.50 AND whale>3 AND side=BUY"
+  },
+  "fees": {
+    "taker": {
+      "fee": 1.7325,
+      "role": "taker",
+      "category": "crypto",
+      "fee_rate": 0.07,
+      "maker_multiplier": 0.0,
+      "fee_free": false,
+      "fee_model_version": "2026-07-polymarket-v1",
+      "as_of": "2026-07-26",
+      "schedule_notes": "Bundled with 2026-07-polymarket-v1"
+    },
+    "maker": {
+      "fee": 0.0,
+      "role": "maker",
+      "category": "crypto",
+      "fee_rate": 0.07,
+      "maker_multiplier": 0.0,
+      "fee_free": false,
+      "fee_model_version": "2026-07-polymarket-v1",
+      "as_of": "2026-07-26",
+      "schedule_notes": "Bundled with 2026-07-polymarket-v1"
+    },
+    "fee_free": {
+      "fee": 0.0,
+      "role": "taker",
+      "category": "geopolitics",
+      "fee_rate": 0.0,
+      "maker_multiplier": 0.0,
+      "fee_free": true,
+      "fee_model_version": "2026-07-polymarket-v1",
+      "as_of": "2026-07-26",
+      "schedule_notes": "Bundled with 2026-07-polymarket-v1"
+    }
+  },
+  "walk_forward": {
+    "n_folds": 2,
+    "folds": [
+      {
+        "fold": {
+          "fold_id": 0,
+          "train_start": "2023-04-10",
+          "train_end": "2023-04-15",
+          "test_start": "2023-04-16",
+          "test_end": "2023-04-19",
+          "embargo_start": "2023-04-15",
+          "embargo_end": "2023-04-16"
+        },
+        "metrics": {
+          "n_train": 50,
+          "n_test": 0,
+          "n_filtered": 0,
+          "oos_ev": 0.0,
+          "calibrator_bins": 5
+        }
+      },
+      {
+        "fold": {
+          "fold_id": 1,
+          "train_start": "2023-04-13",
+          "train_end": "2023-04-18",
+          "test_start": "2023-04-19",
+          "test_end": "2023-04-22",
+          "embargo_start": "2023-04-18",
+          "embargo_end": "2023-04-19"
+        },
+        "metrics": {
+          "n_train": 50,
+          "n_test": 0,
+          "n_filtered": 0,
+          "oos_ev": 0.0,
+          "calibrator_bins": 5
+        }
+      }
+    ]
+  },
+  "multiple_testing": {
+    "n_trials": 4,
+    "best_sharpe": 1.1,
+    "dsr": 0.4689710866820855,
+    "pbo_proxy": 0.0,
+    "fdr_alpha": 0.05,
+    "n_discoveries_bh": 1,
+    "neighborhood_stability": null,
+    "notes": "Scaffolding only \u2014 not a claim of alpha"
+  },
+  "feature_coverage": {
+    "n_features": 15,
+    "by_category": {
+      "prediction_market": {
+        "implemented": 4,
+        "partial": 1,
+        "blocked": 2,
+        "stub": 0,
+        "total": 7
+      },
+      "technical": {
+        "implemented": 3,
+        "partial": 0,
+        "blocked": 0,
+        "stub": 0,
+        "total": 3
+      },
+      "microstructure": {
+        "implemented": 0,
+        "partial": 1,
+        "blocked": 2,
+        "stub": 0,
+        "total": 3
+      },
+      "risk": {
+        "implemented": 1,
+        "partial": 0,
+        "blocked": 0,
+        "stub": 0,
+        "total": 1
+      },
+      "exogenous": {
+        "implemented": 0,
+        "partial": 0,
+        "blocked": 0,
+        "stub": 1,
+        "total": 1
+      }
+    },
+    "implemented": [
+      "logit_price",
+      "logit_edge_vs_half",
+      "ttr_info_hazard",
+      "whale_ratio",
+      "volume_spike_1h_24h",
+      "decay_adjusted_velocity",
+      "calibration_residual",
+      "inventory_risk_cap"
+    ],
+    "partial": [
+      "complete_set_residual",
+      "fill_prob_adverse_markout"
+    ],
+    "blocked": [
+      "neg_risk_residual",
+      "multi_level_ofi",
+      "book_resilience",
+      "cross_market_lead_lag",
+      "exogenous_news_sentiment"
+    ]
+  },
+  "inventory": {
+    "markdown": "/Users/isaackaps/Desktop/Trader_bot/scripts/Polymarket Data Collection/docs/research/parameter_inventory.md",
+    "json": "/Users/isaackaps/Desktop/Trader_bot/scripts/Polymarket Data Collection/docs/research/parameter_inventory.json",
+    "csv": "/Users/isaackaps/Desktop/Trader_bot/scripts/Polymarket Data Collection/docs/research/parameter_inventory.csv",
+    "conflicts": "/Users/isaackaps/Desktop/Trader_bot/scripts/Polymarket Data Collection/docs/research/conflict_report.md",
+    "unused": "/Users/isaackaps/Desktop/Trader_bot/scripts/Polymarket Data Collection/docs/research/unused_parameter_report.md",
+    "hardcoded": "/Users/isaackaps/Desktop/Trader_bot/scripts/Polymarket Data Collection/docs/research/hardcoded_threshold_report.md",
+    "missing_tests": "/Users/isaackaps/Desktop/Trader_bot/scripts/Polymarket Data Collection/docs/research/missing_test_report.md",
+    "precedence": "/Users/isaackaps/Desktop/Trader_bot/scripts/Polymarket Data Collection/docs/research/configuration_precedence_report.md",
+    "counts": "/Users/isaackaps/Desktop/Trader_bot/scripts/Polymarket Data Collection/docs/research/inventory_summary_counts.json"
+  }
+}

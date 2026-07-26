@@ -1,0 +1,1209 @@
+[
+  {
+    "name": "WHALE_RATIO_DIVERGENCE_THRESHOLD",
+    "category": "signal/feature",
+    "declaration_location": "schema.py:WHALE_RATIO_DIVERGENCE_THRESHOLD",
+    "current_default": 3.0,
+    "existing_sweep_range": "Not defined",
+    "recommended_sweep_range": [
+      2.0,
+      2.5,
+      3.0,
+      4.0,
+      5.0
+    ],
+    "usage_sites": [
+      "features.compute_composite_features"
+    ],
+    "status": "Active",
+    "notes": "Used for price_volume_divergence boolean"
+  },
+  {
+    "name": "DECAY_TTR_FLOOR",
+    "category": "signal/feature",
+    "declaration_location": "schema.py:DECAY_TTR_FLOOR",
+    "current_default": 0.1,
+    "existing_sweep_range": "Not defined",
+    "recommended_sweep_range": [
+      0.05,
+      0.1,
+      0.25,
+      0.5
+    ],
+    "usage_sites": [
+      "features.compute_composite_features"
+    ],
+    "status": "Active",
+    "notes": ""
+  },
+  {
+    "name": "FEATURE_WINDOWS",
+    "category": "signal/feature",
+    "declaration_location": "schema.py:FEATURE_WINDOWS",
+    "current_default": [
+      "1h",
+      "6h",
+      "24h"
+    ],
+    "existing_sweep_range": "Not defined",
+    "recommended_sweep_range": [
+      "30m",
+      "1h",
+      "6h",
+      "24h",
+      "72h"
+    ],
+    "usage_sites": [
+      "features.compute_rolling_features"
+    ],
+    "status": "Active",
+    "notes": ""
+  },
+  {
+    "name": "PRICE_BUCKET_BREAKS",
+    "category": "signal/feature",
+    "declaration_location": "schema.py:PRICE_BUCKET_BREAKS",
+    "current_default": [
+      0.05,
+      0.1,
+      0.2,
+      0.3,
+      0.4,
+      0.5,
+      0.6,
+      0.7,
+      0.8,
+      0.85,
+      0.9,
+      0.95
+    ],
+    "existing_sweep_range": "Not defined (labels used as grid axis)",
+    "recommended_sweep_range": "Keep; optionally finer near 0.45-0.55",
+    "usage_sites": [
+      "features.assign_price_bucket",
+      "backtest.iter_grid_params"
+    ],
+    "status": "Active",
+    "notes": ""
+  },
+  {
+    "name": "_EPS_HOURS",
+    "category": "signal/feature",
+    "declaration_location": "features.py:_EPS_HOURS",
+    "current_default": 1e-06,
+    "existing_sweep_range": "Not defined",
+    "recommended_sweep_range": "Not defined \u2014 numerical floor",
+    "usage_sites": [
+      "features._rolling_window_frame"
+    ],
+    "status": "Hardcoded",
+    "notes": "Module private constant"
+  },
+  {
+    "name": "DEFAULT_SPIKE_THRESHOLDS",
+    "category": "entry",
+    "declaration_location": "backtest.py:DEFAULT_SPIKE_THRESHOLDS",
+    "current_default": [
+      null,
+      1.5,
+      2.0,
+      3.0
+    ],
+    "existing_sweep_range": [
+      null,
+      1.5,
+      2.0,
+      3.0
+    ],
+    "recommended_sweep_range": [
+      null,
+      1.25,
+      1.5,
+      2.0,
+      3.0,
+      4.0
+    ],
+    "usage_sites": [
+      "backtest.iter_grid_params",
+      "backtest.find_edges"
+    ],
+    "status": "Active",
+    "notes": ""
+  },
+  {
+    "name": "DEFAULT_TTR_BOUNDS",
+    "category": "lifecycle",
+    "declaration_location": "backtest.py:DEFAULT_TTR_BOUNDS",
+    "current_default": [
+      null,
+      24.0,
+      48.0,
+      72.0
+    ],
+    "existing_sweep_range": [
+      null,
+      24.0,
+      48.0,
+      72.0
+    ],
+    "recommended_sweep_range": [
+      null,
+      6.0,
+      12.0,
+      24.0,
+      48.0,
+      72.0,
+      168.0
+    ],
+    "usage_sites": [
+      "backtest.iter_grid_params"
+    ],
+    "status": "Active",
+    "notes": ""
+  },
+  {
+    "name": "DEFAULT_WHALE_THRESHOLDS",
+    "category": "entry",
+    "declaration_location": "backtest.py:DEFAULT_WHALE_THRESHOLDS",
+    "current_default": [
+      null,
+      2.0,
+      3.0
+    ],
+    "existing_sweep_range": [
+      null,
+      2.0,
+      3.0
+    ],
+    "recommended_sweep_range": [
+      null,
+      1.5,
+      2.0,
+      3.0,
+      4.0,
+      5.0
+    ],
+    "usage_sites": [
+      "backtest.iter_grid_params"
+    ],
+    "status": "Active",
+    "notes": ""
+  },
+  {
+    "name": "DEFAULT_MOMENTUM_SIGNS",
+    "category": "entry",
+    "declaration_location": "backtest.py:DEFAULT_MOMENTUM_SIGNS",
+    "current_default": [
+      "any",
+      "pos",
+      "neg"
+    ],
+    "existing_sweep_range": [
+      "any",
+      "pos",
+      "neg"
+    ],
+    "recommended_sweep_range": [
+      "any",
+      "pos",
+      "neg"
+    ],
+    "usage_sites": [
+      "backtest.iter_grid_params"
+    ],
+    "status": "Active",
+    "notes": ""
+  },
+  {
+    "name": "find_edges.min_samples",
+    "category": "backtest/validation",
+    "declaration_location": "backtest.py:find_edges",
+    "current_default": 5,
+    "existing_sweep_range": "Not defined",
+    "recommended_sweep_range": [
+      20,
+      50,
+      100
+    ],
+    "usage_sites": [
+      "backtest.find_edges",
+      "cli.find-edges --min-samples"
+    ],
+    "status": "Active",
+    "notes": "CLI default 5 is aggressive for inference; recommend >=20 OOS"
+  },
+  {
+    "name": "run_oos_edge_validation.min_samples",
+    "category": "backtest/validation",
+    "declaration_location": "backtest.py:run_oos_edge_validation",
+    "current_default": 20,
+    "existing_sweep_range": "Not defined",
+    "recommended_sweep_range": [
+      20,
+      50,
+      100
+    ],
+    "usage_sites": [
+      "backtest.run_oos_edge_validation"
+    ],
+    "status": "Active",
+    "notes": ""
+  },
+  {
+    "name": "CATEGORY_FEE_RATES",
+    "category": "fee",
+    "declaration_location": "paper_trader.py:CATEGORY_FEE_RATES",
+    "current_default": {
+      "crypto": 0.07,
+      "sports": 0.05,
+      "geopolitics": 0.0
+    },
+    "existing_sweep_range": "Not defined",
+    "recommended_sweep_range": "Use FeeModel schedule / PIT versions; do not sweep rates as strategy knobs",
+    "usage_sites": [
+      "paper_trader.resolve_fee_rate",
+      "research.fees"
+    ],
+    "status": "Active",
+    "notes": "Duplicated into research.fees.CATEGORY_TAKER_FEE_RATES with FEE_MODEL_VERSION"
+  },
+  {
+    "name": "PaperConfig.use_dynamic_fees",
+    "category": "fee",
+    "declaration_location": "paper_trader.py:PaperConfig",
+    "current_default": true,
+    "existing_sweep_range": "Not defined",
+    "recommended_sweep_range": [
+      true
+    ],
+    "usage_sites": [
+      "PaperTrader.compute_taker_fee"
+    ],
+    "status": "Active",
+    "notes": ""
+  },
+  {
+    "name": "PaperConfig.fee_category",
+    "category": "fee",
+    "declaration_location": "paper_trader.py:PaperConfig",
+    "current_default": "crypto",
+    "existing_sweep_range": "Not defined",
+    "recommended_sweep_range": "Market-specific PIT category; not a free sweep axis",
+    "usage_sites": [
+      "PaperTrader",
+      "cli --fee-category"
+    ],
+    "status": "Active",
+    "notes": ""
+  },
+  {
+    "name": "PaperConfig.fee_bps",
+    "category": "fee",
+    "declaration_location": "paper_trader.py:PaperConfig",
+    "current_default": 0.0,
+    "existing_sweep_range": "Not defined",
+    "recommended_sweep_range": "Legacy only when use_dynamic_fees=False",
+    "usage_sites": [
+      "PaperTrader.compute_taker_fee"
+    ],
+    "status": "Partially wired",
+    "notes": "Active only with --flat-fees"
+  },
+  {
+    "name": "PaperConfig.spread_slippage_bps",
+    "category": "execution",
+    "declaration_location": "paper_trader.py:PaperConfig",
+    "current_default": 50.0,
+    "existing_sweep_range": "Not defined",
+    "recommended_sweep_range": [
+      10,
+      25,
+      50,
+      100,
+      200
+    ],
+    "usage_sites": [
+      "PaperTrader.fill modeling"
+    ],
+    "status": "Active",
+    "notes": ""
+  },
+  {
+    "name": "PaperConfig.bankroll",
+    "category": "risk",
+    "declaration_location": "paper_trader.py:PaperConfig",
+    "current_default": 10000.0,
+    "existing_sweep_range": "Not defined",
+    "recommended_sweep_range": "Not a strategy parameter",
+    "usage_sites": [
+      "PaperTrader",
+      "cli --bankroll"
+    ],
+    "status": "Active",
+    "notes": ""
+  },
+  {
+    "name": "PaperConfig.kelly_fraction",
+    "category": "risk",
+    "declaration_location": "paper_trader.py:PaperConfig",
+    "current_default": 0.25,
+    "existing_sweep_range": "Not defined",
+    "recommended_sweep_range": [
+      0.1,
+      0.25,
+      0.5
+    ],
+    "usage_sites": [
+      "kelly_fraction",
+      "cli --kelly-fraction"
+    ],
+    "status": "Active",
+    "notes": ""
+  },
+  {
+    "name": "PaperConfig.max_position_pct",
+    "category": "risk",
+    "declaration_location": "paper_trader.py:PaperConfig",
+    "current_default": 0.05,
+    "existing_sweep_range": "Not defined",
+    "recommended_sweep_range": [
+      0.02,
+      0.05,
+      0.1
+    ],
+    "usage_sites": [
+      "PaperTrader sizing"
+    ],
+    "status": "Active",
+    "notes": ""
+  },
+  {
+    "name": "PaperConfig.min_oos_ev_pct",
+    "category": "entry",
+    "declaration_location": "paper_trader.py:PaperConfig",
+    "current_default": 10.0,
+    "existing_sweep_range": "Not defined",
+    "recommended_sweep_range": [
+      5.0,
+      8.0,
+      10.0,
+      15.0
+    ],
+    "usage_sites": [
+      "PaperTrader signal gate",
+      "cli --min-ev"
+    ],
+    "status": "Active",
+    "notes": ""
+  },
+  {
+    "name": "PaperConfig.max_open_positions",
+    "category": "risk",
+    "declaration_location": "paper_trader.py:PaperConfig",
+    "current_default": 25,
+    "existing_sweep_range": "Not defined",
+    "recommended_sweep_range": [
+      10,
+      15,
+      25,
+      40
+    ],
+    "usage_sites": [
+      "PaperTrader"
+    ],
+    "status": "Active",
+    "notes": ""
+  },
+  {
+    "name": "PaperConfig.cooldown_sec",
+    "category": "lifecycle",
+    "declaration_location": "paper_trader.py:PaperConfig",
+    "current_default": 60.0,
+    "existing_sweep_range": "Not defined",
+    "recommended_sweep_range": [
+      30,
+      60,
+      120,
+      300
+    ],
+    "usage_sites": [
+      "PaperTrader"
+    ],
+    "status": "Active",
+    "notes": ""
+  },
+  {
+    "name": "PaperConfig.take_profit_pct",
+    "category": "exit",
+    "declaration_location": "paper_trader.py:PaperConfig",
+    "current_default": null,
+    "existing_sweep_range": "Not defined",
+    "recommended_sweep_range": [
+      null,
+      0.1,
+      0.2,
+      0.3
+    ],
+    "usage_sites": [
+      "PaperTrader early exit"
+    ],
+    "status": "Active",
+    "notes": ""
+  },
+  {
+    "name": "PaperConfig.stop_loss_pct",
+    "category": "exit",
+    "declaration_location": "paper_trader.py:PaperConfig",
+    "current_default": null,
+    "existing_sweep_range": "Not defined",
+    "recommended_sweep_range": [
+      null,
+      0.05,
+      0.1,
+      0.15
+    ],
+    "usage_sites": [
+      "PaperTrader early exit"
+    ],
+    "status": "Active",
+    "notes": ""
+  },
+  {
+    "name": "PaperConfig.resolve_poll_sec",
+    "category": "lifecycle",
+    "declaration_location": "paper_trader.py:PaperConfig",
+    "current_default": 60.0,
+    "existing_sweep_range": "Not defined",
+    "recommended_sweep_range": [
+      30,
+      60,
+      120
+    ],
+    "usage_sites": [
+      "PaperTrader resolution poll"
+    ],
+    "status": "Active",
+    "notes": ""
+  },
+  {
+    "name": "SwingConfig.bankroll",
+    "category": "risk",
+    "declaration_location": "swing_trader.py:SwingConfig",
+    "current_default": 10000.0,
+    "existing_sweep_range": "Not defined",
+    "recommended_sweep_range": "N/A",
+    "usage_sites": [
+      "SwingTrader",
+      "profiles.py"
+    ],
+    "status": "Active",
+    "notes": ""
+  },
+  {
+    "name": "SwingConfig.position_pct",
+    "category": "risk",
+    "declaration_location": "swing_trader.py:SwingConfig",
+    "current_default": 0.05,
+    "existing_sweep_range": "Not defined",
+    "recommended_sweep_range": [
+      0.02,
+      0.05,
+      0.1
+    ],
+    "usage_sites": [
+      "SwingTrader",
+      "profiles.py"
+    ],
+    "status": "Active",
+    "notes": ""
+  },
+  {
+    "name": "SwingConfig.min_liquidity_usd",
+    "category": "entry",
+    "declaration_location": "swing_trader.py:SwingConfig",
+    "current_default": 50000.0,
+    "existing_sweep_range": "Not defined",
+    "recommended_sweep_range": [
+      10000,
+      25000,
+      50000,
+      100000
+    ],
+    "usage_sites": [
+      "SwingTrader",
+      "profiles.py"
+    ],
+    "status": "Active",
+    "notes": ""
+  },
+  {
+    "name": "SwingConfig.min_ev_pct",
+    "category": "entry",
+    "declaration_location": "swing_trader.py:SwingConfig",
+    "current_default": 8.0,
+    "existing_sweep_range": "Not defined",
+    "recommended_sweep_range": [
+      5.0,
+      8.0,
+      10.0,
+      12.0
+    ],
+    "usage_sites": [
+      "SwingTrader",
+      "profiles.py"
+    ],
+    "status": "Active",
+    "notes": ""
+  },
+  {
+    "name": "SwingConfig.rsi_period",
+    "category": "signal/feature",
+    "declaration_location": "swing_trader.py:SwingConfig",
+    "current_default": 14,
+    "existing_sweep_range": "Not defined",
+    "recommended_sweep_range": [
+      7,
+      14,
+      21
+    ],
+    "usage_sites": [
+      "SwingTrader",
+      "profiles.py"
+    ],
+    "status": "Active",
+    "notes": ""
+  },
+  {
+    "name": "SwingConfig.rsi_oversold",
+    "category": "entry",
+    "declaration_location": "swing_trader.py:SwingConfig",
+    "current_default": 25.0,
+    "existing_sweep_range": "Not defined",
+    "recommended_sweep_range": [
+      20,
+      25,
+      30,
+      35
+    ],
+    "usage_sites": [
+      "SwingTrader",
+      "profiles.py"
+    ],
+    "status": "Active",
+    "notes": "profiles RSI use 25; confluence 30"
+  },
+  {
+    "name": "SwingConfig.bb_period",
+    "category": "signal/feature",
+    "declaration_location": "swing_trader.py:SwingConfig",
+    "current_default": 20,
+    "existing_sweep_range": "Not defined",
+    "recommended_sweep_range": [
+      10,
+      20,
+      30
+    ],
+    "usage_sites": [
+      "SwingTrader",
+      "profiles.py"
+    ],
+    "status": "Active",
+    "notes": ""
+  },
+  {
+    "name": "SwingConfig.bb_std",
+    "category": "signal/feature",
+    "declaration_location": "swing_trader.py:SwingConfig",
+    "current_default": 2.5,
+    "existing_sweep_range": "Not defined",
+    "recommended_sweep_range": [
+      2.0,
+      2.5,
+      3.0
+    ],
+    "usage_sites": [
+      "SwingTrader",
+      "profiles.py"
+    ],
+    "status": "Active",
+    "notes": ""
+  },
+  {
+    "name": "SwingConfig.hurst_min",
+    "category": "entry",
+    "declaration_location": "swing_trader.py:SwingConfig",
+    "current_default": 0.55,
+    "existing_sweep_range": "Not defined",
+    "recommended_sweep_range": [
+      0.5,
+      0.55,
+      0.6,
+      0.65
+    ],
+    "usage_sites": [
+      "SwingTrader",
+      "profiles.py"
+    ],
+    "status": "Active",
+    "notes": ""
+  },
+  {
+    "name": "SwingConfig.ema_fast",
+    "category": "signal/feature",
+    "declaration_location": "swing_trader.py:SwingConfig",
+    "current_default": 5,
+    "existing_sweep_range": "Not defined",
+    "recommended_sweep_range": [
+      3,
+      5,
+      8
+    ],
+    "usage_sites": [
+      "SwingTrader",
+      "profiles.py"
+    ],
+    "status": "Active",
+    "notes": ""
+  },
+  {
+    "name": "SwingConfig.ema_slow",
+    "category": "signal/feature",
+    "declaration_location": "swing_trader.py:SwingConfig",
+    "current_default": 20,
+    "existing_sweep_range": "Not defined",
+    "recommended_sweep_range": [
+      15,
+      20,
+      30
+    ],
+    "usage_sites": [
+      "SwingTrader",
+      "profiles.py"
+    ],
+    "status": "Active",
+    "notes": ""
+  },
+  {
+    "name": "SwingConfig.momentum_min_move",
+    "category": "entry",
+    "declaration_location": "swing_trader.py:SwingConfig",
+    "current_default": 0.1,
+    "existing_sweep_range": "Not defined",
+    "recommended_sweep_range": [
+      0.05,
+      0.08,
+      0.1,
+      0.15
+    ],
+    "usage_sites": [
+      "SwingTrader",
+      "profiles.py"
+    ],
+    "status": "Active",
+    "notes": "profiles momentum use 0.08"
+  },
+  {
+    "name": "SwingConfig.whale_volume_ratio",
+    "category": "entry",
+    "declaration_location": "swing_trader.py:SwingConfig",
+    "current_default": 2.0,
+    "existing_sweep_range": "Not defined",
+    "recommended_sweep_range": [
+      1.5,
+      2.0,
+      3.0
+    ],
+    "usage_sites": [
+      "SwingTrader",
+      "profiles.py"
+    ],
+    "status": "Active",
+    "notes": ""
+  },
+  {
+    "name": "SwingConfig.book_imbalance_min",
+    "category": "microstructure",
+    "declaration_location": "swing_trader.py:SwingConfig",
+    "current_default": 3.0,
+    "existing_sweep_range": "Not defined",
+    "recommended_sweep_range": [
+      2.0,
+      2.5,
+      3.0,
+      4.0
+    ],
+    "usage_sites": [
+      "SwingTrader",
+      "profiles.py"
+    ],
+    "status": "Conflicting",
+    "notes": "vs confluence_book_min=2.5"
+  },
+  {
+    "name": "SwingConfig.book_price_lo",
+    "category": "entry",
+    "declaration_location": "swing_trader.py:SwingConfig",
+    "current_default": 0.2,
+    "existing_sweep_range": "Not defined",
+    "recommended_sweep_range": [
+      0.1,
+      0.2,
+      0.3
+    ],
+    "usage_sites": [
+      "SwingTrader",
+      "profiles.py"
+    ],
+    "status": "Active",
+    "notes": ""
+  },
+  {
+    "name": "SwingConfig.book_price_hi",
+    "category": "entry",
+    "declaration_location": "swing_trader.py:SwingConfig",
+    "current_default": 0.8,
+    "existing_sweep_range": "Not defined",
+    "recommended_sweep_range": [
+      0.7,
+      0.8,
+      0.9
+    ],
+    "usage_sites": [
+      "SwingTrader",
+      "profiles.py"
+    ],
+    "status": "Active",
+    "notes": ""
+  },
+  {
+    "name": "SwingConfig.take_profit_pct",
+    "category": "exit",
+    "declaration_location": "swing_trader.py:SwingConfig",
+    "current_default": 0.2,
+    "existing_sweep_range": "Not defined",
+    "recommended_sweep_range": [
+      0.1,
+      0.15,
+      0.2,
+      0.3
+    ],
+    "usage_sites": [
+      "SwingTrader",
+      "profiles.py"
+    ],
+    "status": "Active",
+    "notes": ""
+  },
+  {
+    "name": "SwingConfig.take_profit_atr_mult",
+    "category": "exit",
+    "declaration_location": "swing_trader.py:SwingConfig",
+    "current_default": 2.0,
+    "existing_sweep_range": "Not defined",
+    "recommended_sweep_range": [
+      1.5,
+      2.0,
+      3.0
+    ],
+    "usage_sites": [
+      "SwingTrader",
+      "profiles.py"
+    ],
+    "status": "Active",
+    "notes": ""
+  },
+  {
+    "name": "SwingConfig.stop_loss_pct",
+    "category": "exit",
+    "declaration_location": "swing_trader.py:SwingConfig",
+    "current_default": 0.1,
+    "existing_sweep_range": "Not defined",
+    "recommended_sweep_range": [
+      0.05,
+      0.1,
+      0.15
+    ],
+    "usage_sites": [
+      "SwingTrader",
+      "profiles.py"
+    ],
+    "status": "Active",
+    "notes": ""
+  },
+  {
+    "name": "SwingConfig.stop_loss_atr_mult",
+    "category": "exit",
+    "declaration_location": "swing_trader.py:SwingConfig",
+    "current_default": 1.0,
+    "existing_sweep_range": "Not defined",
+    "recommended_sweep_range": [
+      0.5,
+      1.0,
+      1.5
+    ],
+    "usage_sites": [
+      "SwingTrader",
+      "profiles.py"
+    ],
+    "status": "Active",
+    "notes": ""
+  },
+  {
+    "name": "SwingConfig.atr_period",
+    "category": "signal/feature",
+    "declaration_location": "swing_trader.py:SwingConfig",
+    "current_default": 14,
+    "existing_sweep_range": "Not defined",
+    "recommended_sweep_range": [
+      7,
+      14,
+      21
+    ],
+    "usage_sites": [
+      "SwingTrader",
+      "profiles.py"
+    ],
+    "status": "Active",
+    "notes": ""
+  },
+  {
+    "name": "SwingConfig.atr_stop_mult",
+    "category": "exit",
+    "declaration_location": "swing_trader.py:SwingConfig",
+    "current_default": 2.0,
+    "existing_sweep_range": "Not defined",
+    "recommended_sweep_range": [
+      1.5,
+      2.0,
+      3.0
+    ],
+    "usage_sites": [
+      "SwingTrader",
+      "profiles.py"
+    ],
+    "status": "Active",
+    "notes": ""
+  },
+  {
+    "name": "SwingConfig.stall_hours",
+    "category": "lifecycle",
+    "declaration_location": "swing_trader.py:SwingConfig",
+    "current_default": 36.0,
+    "existing_sweep_range": "Not defined",
+    "recommended_sweep_range": [
+      24,
+      36,
+      48,
+      72
+    ],
+    "usage_sites": [
+      "SwingTrader",
+      "profiles.py"
+    ],
+    "status": "Conflicting",
+    "notes": "CLI default 48.0"
+  },
+  {
+    "name": "SwingConfig.use_bb_take_profit",
+    "category": "exit",
+    "declaration_location": "swing_trader.py:SwingConfig",
+    "current_default": true,
+    "existing_sweep_range": "Not defined",
+    "recommended_sweep_range": [
+      true,
+      false
+    ],
+    "usage_sites": [
+      "SwingTrader",
+      "profiles.py"
+    ],
+    "status": "Active",
+    "notes": ""
+  },
+  {
+    "name": "SwingConfig.max_open_positions",
+    "category": "risk",
+    "declaration_location": "swing_trader.py:SwingConfig",
+    "current_default": 15,
+    "existing_sweep_range": "Not defined",
+    "recommended_sweep_range": [
+      10,
+      15,
+      25
+    ],
+    "usage_sites": [
+      "SwingTrader",
+      "profiles.py"
+    ],
+    "status": "Active",
+    "notes": ""
+  },
+  {
+    "name": "SwingConfig.cooldown_sec",
+    "category": "lifecycle",
+    "declaration_location": "swing_trader.py:SwingConfig",
+    "current_default": 300.0,
+    "existing_sweep_range": "Not defined",
+    "recommended_sweep_range": [
+      60,
+      120,
+      300
+    ],
+    "usage_sites": [
+      "SwingTrader",
+      "profiles.py"
+    ],
+    "status": "Conflicting",
+    "notes": "profiles use 120"
+  },
+  {
+    "name": "SwingConfig.history_len",
+    "category": "signal/feature",
+    "declaration_location": "swing_trader.py:SwingConfig",
+    "current_default": 200,
+    "existing_sweep_range": "Not defined",
+    "recommended_sweep_range": [
+      100,
+      200,
+      500
+    ],
+    "usage_sites": [
+      "SwingTrader",
+      "profiles.py"
+    ],
+    "status": "Active",
+    "notes": ""
+  },
+  {
+    "name": "SwingConfig.require_confluence",
+    "category": "entry",
+    "declaration_location": "swing_trader.py:SwingConfig",
+    "current_default": false,
+    "existing_sweep_range": "Not defined",
+    "recommended_sweep_range": [
+      true,
+      false
+    ],
+    "usage_sites": [
+      "SwingTrader",
+      "profiles.py"
+    ],
+    "status": "Active",
+    "notes": ""
+  },
+  {
+    "name": "SwingConfig.min_confluence",
+    "category": "entry",
+    "declaration_location": "swing_trader.py:SwingConfig",
+    "current_default": 2,
+    "existing_sweep_range": "Not defined",
+    "recommended_sweep_range": [
+      2,
+      3
+    ],
+    "usage_sites": [
+      "SwingTrader",
+      "profiles.py"
+    ],
+    "status": "Active",
+    "notes": ""
+  },
+  {
+    "name": "SwingConfig.confluence_rsi",
+    "category": "entry",
+    "declaration_location": "swing_trader.py:SwingConfig",
+    "current_default": 30.0,
+    "existing_sweep_range": "Not defined",
+    "recommended_sweep_range": [
+      25,
+      30,
+      35
+    ],
+    "usage_sites": [
+      "SwingTrader",
+      "profiles.py"
+    ],
+    "status": "Active",
+    "notes": ""
+  },
+  {
+    "name": "SwingConfig.confluence_volume_usd",
+    "category": "entry",
+    "declaration_location": "swing_trader.py:SwingConfig",
+    "current_default": 25000.0,
+    "existing_sweep_range": "Not defined",
+    "recommended_sweep_range": [
+      10000,
+      25000,
+      50000
+    ],
+    "usage_sites": [
+      "SwingTrader",
+      "profiles.py"
+    ],
+    "status": "Active",
+    "notes": ""
+  },
+  {
+    "name": "SwingConfig.confluence_book_min",
+    "category": "microstructure",
+    "declaration_location": "swing_trader.py:SwingConfig",
+    "current_default": 2.5,
+    "existing_sweep_range": "Not defined",
+    "recommended_sweep_range": [
+      2.0,
+      2.5,
+      3.0
+    ],
+    "usage_sites": [
+      "SwingTrader",
+      "profiles.py"
+    ],
+    "status": "Conflicting",
+    "notes": ""
+  },
+  {
+    "name": "DEFAULT_CHUNK_ROWS",
+    "category": "data/ingest",
+    "declaration_location": "ingest.py:DEFAULT_CHUNK_ROWS",
+    "current_default": 500000,
+    "existing_sweep_range": "Not defined",
+    "recommended_sweep_range": "Not a research parameter",
+    "usage_sites": [
+      "ingest.run_ingest",
+      "cli --chunk-rows"
+    ],
+    "status": "Active",
+    "notes": ""
+  },
+  {
+    "name": "cli.paper-trade.duration",
+    "category": "CLI/config",
+    "declaration_location": "cli.py:paper-trade --duration",
+    "current_default": 120.0,
+    "existing_sweep_range": "Not defined",
+    "recommended_sweep_range": "Ops only (GHA uses 18000)",
+    "usage_sites": [
+      "cli._cmd_paper_trade"
+    ],
+    "status": "Active",
+    "notes": ""
+  },
+  {
+    "name": "cli.swing-trade.stall_hours",
+    "category": "lifecycle",
+    "declaration_location": "cli.py:swing-trade --stall-hours",
+    "current_default": 48.0,
+    "existing_sweep_range": "Not defined",
+    "recommended_sweep_range": [
+      24,
+      36,
+      48,
+      72
+    ],
+    "usage_sites": [
+      "cli._cmd_swing_trade"
+    ],
+    "status": "Conflicting",
+    "notes": "Conflicts with SwingConfig.stall_hours=36.0"
+  },
+  {
+    "name": "StrategyParams.require_price_volume_divergence",
+    "category": "entry",
+    "declaration_location": "backtest.py:StrategyParams",
+    "current_default": false,
+    "existing_sweep_range": "Not defined",
+    "recommended_sweep_range": [
+      false,
+      true
+    ],
+    "usage_sites": [
+      "apply_strategy_filter"
+    ],
+    "status": "Partially wired",
+    "notes": "Field exists but iter_grid_params never sets True \u2014 not in default grid"
+  },
+  {
+    "name": "momentum_6h grid",
+    "category": "entry",
+    "declaration_location": "backtest.py:iter_grid_params",
+    "current_default": [
+      "any"
+    ],
+    "existing_sweep_range": [
+      "any"
+    ],
+    "recommended_sweep_range": [
+      "any",
+      "pos",
+      "neg"
+    ],
+    "usage_sites": [
+      "find_edges"
+    ],
+    "status": "Partially wired",
+    "notes": "Axis declared but default grid freezes momentum_6h at any"
+  },
+  {
+    "name": "logit_half_tick",
+    "category": "signal/feature",
+    "declaration_location": "research/logit.py:DEFAULT_HALF_TICK",
+    "current_default": 0.005,
+    "existing_sweep_range": "Not defined",
+    "recommended_sweep_range": [
+      0.001,
+      0.005,
+      0.01
+    ],
+    "usage_sites": [
+      "research.logit",
+      "feature_registry.logit_price"
+    ],
+    "status": "Active",
+    "notes": "New foundation"
+  },
+  {
+    "name": "FEE_MODEL_VERSION",
+    "category": "fee",
+    "declaration_location": "research/fees.py:FEE_MODEL_VERSION",
+    "current_default": "2026-07-polymarket-v1",
+    "existing_sweep_range": "Not defined",
+    "recommended_sweep_range": "Version pin only",
+    "usage_sites": [
+      "compute_fill_fee",
+      "run metadata"
+    ],
+    "status": "Active",
+    "notes": "New foundation"
+  },
+  {
+    "name": "ExecutionConfig.latency_ms",
+    "category": "execution",
+    "declaration_location": "research/execution.py:ExecutionConfig",
+    "current_default": 50.0,
+    "existing_sweep_range": "Not defined",
+    "recommended_sweep_range": [
+      0,
+      50,
+      100,
+      250,
+      500
+    ],
+    "usage_sites": [
+      "simulate_aggressive_fill"
+    ],
+    "status": "Active",
+    "notes": "New; not yet wired into PaperTrader path"
+  },
+  {
+    "name": "exogenous.*",
+    "category": "exogenous",
+    "declaration_location": "research/exogenous.py",
+    "current_default": null,
+    "existing_sweep_range": "Not defined",
+    "recommended_sweep_range": "Blocked until PIT providers exist",
+    "usage_sites": [],
+    "status": "Declared but unused",
+    "notes": "Provider stubs only"
+  }
+]

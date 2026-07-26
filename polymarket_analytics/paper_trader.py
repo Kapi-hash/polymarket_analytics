@@ -15,26 +15,16 @@ from typing import Any, Mapping, Sequence
 
 from polymarket_analytics.backtest import StrategyParams, params_from_edge_row
 from polymarket_analytics.live_feed import LiveFeatures
+from polymarket_analytics.research.fees import (
+    CATEGORY_TAKER_FEE_RATES as CATEGORY_FEE_RATES,
+    FEE_MODEL_VERSION,
+)
 from polymarket_analytics.schema import PRICE_BUCKET_BREAKS, PRICE_BUCKET_LABELS
 
 GAMMA_MARKETS_URL = "https://gamma-api.polymarket.com/markets"
 
-# Official Polymarket category taker feeRate inputs (docs.polymarket.com/trading/fees).
-# fee = C × feeRate × p × (1 − p); peaks at p = 0.50.
-CATEGORY_FEE_RATES: dict[str, float] = {
-    "crypto": 0.07,
-    "sports": 0.05,
-    "finance": 0.04,
-    "politics": 0.04,
-    "economics": 0.05,
-    "culture": 0.05,
-    "weather": 0.05,
-    "other": 0.05,
-    "general": 0.05,
-    "mentions": 0.04,
-    "tech": 0.04,
-    "geopolitics": 0.0,
-}
+# CATEGORY_FEE_RATES / FEE_MODEL_VERSION: canonical schedule in research.fees
+# (docs.polymarket.com/trading/fees). fee = C × feeRate × p × (1 − p).
 
 # Conservative default when OOS report is missing
 DEFAULT_PAPER_STRATEGIES: tuple[StrategyParams, ...] = (
@@ -559,6 +549,7 @@ class PaperTrader:
             "resolutions": self.resolutions,
             "fee_category": self.config.fee_category,
             "fee_rate": self.config.effective_fee_rate(),
+            "fee_model_version": FEE_MODEL_VERSION,
             "use_dynamic_fees": self.config.use_dynamic_fees,
             "n_strategies": len(self.strategies),
             "strategies": [

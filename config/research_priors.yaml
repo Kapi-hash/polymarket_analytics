@@ -1,0 +1,91 @@
+# Hierarchical research priors — RECOMMENDED only.
+# Does NOT replace code-defined defaults in PaperConfig / SwingConfig / backtest grids
+# unless a caller explicitly loads and merges this file.
+#
+# Precedence when merged: global → families → categories → regimes.liquidity/ttr → feature_sweep
+
+_meta:
+  purpose: recommended_priors
+  fee_model_version: "2026-07-polymarket-v1"
+  note: "Existing sweep ranges live in backtest.DEFAULT_*; see docs/research/"
+
+global:
+  bankroll: 10000.0
+  max_position_pct: 0.05
+  kelly_fraction: 0.25
+  spread_slippage_bps: 50.0
+  use_dynamic_fees: true
+  fee_category: crypto
+  half_tick: 0.005
+
+families:
+  paper_edge:
+    min_oos_ev_pct: 10.0
+    cooldown_sec: 60.0
+    max_open_positions: 25
+  swing:
+    min_ev_pct: 8.0
+    cooldown_sec: 300.0
+    stall_hours: 36.0
+    take_profit_pct: 0.20
+    stop_loss_pct: 0.10
+  confluence:
+    require_confluence: true
+    min_confluence: 2
+    confluence_book_min: 2.5
+    cooldown_sec: 120.0
+
+categories:
+  crypto:
+    fee_category: crypto
+  sports:
+    fee_category: sports
+  geopolitics:
+    fee_category: geopolitics
+    note: "fee-free under current schedule"
+
+regimes:
+  liquidity:
+    low:
+      max_position_pct: 0.02
+      spread_slippage_bps: 100.0
+      min_liquidity_usd: 10000.0
+    mid:
+      max_position_pct: 0.05
+      spread_slippage_bps: 50.0
+      min_liquidity_usd: 50000.0
+    high:
+      max_position_pct: 0.10
+      spread_slippage_bps: 25.0
+      min_liquidity_usd: 100000.0
+  ttr:
+    near_expiry:  # < 24h
+      max_time_to_resolution_hours: 24.0
+      stall_hours: 12.0
+    medium:
+      max_time_to_resolution_hours: 72.0
+    long_dated:
+      max_time_to_resolution_hours: 168.0
+
+# Recommended feature sweep ranges (NOT existing code grids)
+recommended_priors:
+  feature_sweep:
+    min_whale_ratio: [null, 2.0, 3.0, 4.0, 5.0]
+    min_volume_spike: [null, 1.25, 1.5, 2.0, 3.0, 4.0]
+    max_ttr_hours: [null, 6.0, 12.0, 24.0, 48.0, 72.0, 168.0]
+    momentum_1h: [any, pos, neg]
+    momentum_6h: [any, pos, neg]
+    half_tick: [0.001, 0.005, 0.01]
+    markout_horizon_s: [5, 30, 60, 300]
+    latency_ms: [0, 50, 100, 250]
+    rsi_oversold: [20, 25, 30, 35]
+    hurst_min: [0.50, 0.55, 0.60]
+    book_imbalance_min: [2.0, 2.5, 3.0, 4.0]
+
+# Existing grids copied for reference (authoritative source: backtest.py)
+existing_code_grids:
+  DEFAULT_SPIKE_THRESHOLDS: [null, 1.5, 2.0, 3.0]
+  DEFAULT_TTR_BOUNDS: [null, 24.0, 48.0, 72.0]
+  DEFAULT_WHALE_THRESHOLDS: [null, 2.0, 3.0]
+  DEFAULT_MOMENTUM_SIGNS: [any, pos, neg]
+  momentum_6h_frozen: [any]

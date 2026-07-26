@@ -1,0 +1,67 @@
+name,category,declaration_location,current_default,existing_sweep_range,recommended_sweep_range,status,notes
+WHALE_RATIO_DIVERGENCE_THRESHOLD,signal/feature,schema.py:WHALE_RATIO_DIVERGENCE_THRESHOLD,3.0,"Not defined",[2.0; 2.5; 3.0; 4.0; 5.0],Active,Used for price_volume_divergence boolean
+DECAY_TTR_FLOOR,signal/feature,schema.py:DECAY_TTR_FLOOR,0.1,"Not defined",[0.05; 0.1; 0.25; 0.5],Active,
+FEATURE_WINDOWS,signal/feature,schema.py:FEATURE_WINDOWS,["1h"; "6h"; "24h"],"Not defined",["30m"; "1h"; "6h"; "24h"; "72h"],Active,
+PRICE_BUCKET_BREAKS,signal/feature,schema.py:PRICE_BUCKET_BREAKS,[0.05; 0.1; 0.2; 0.3; 0.4; 0.5; 0.6; 0.7; 0.8; 0.85; 0.9; 0.95],"Not defined (labels used as grid axis)","Keep; optionally finer near 0.45-0.55",Active,
+_EPS_HOURS,signal/feature,features.py:_EPS_HOURS,1e-06,"Not defined","Not defined \u2014 numerical floor",Hardcoded,Module private constant
+DEFAULT_SPIKE_THRESHOLDS,entry,backtest.py:DEFAULT_SPIKE_THRESHOLDS,[null; 1.5; 2.0; 3.0],[null; 1.5; 2.0; 3.0],[null; 1.25; 1.5; 2.0; 3.0; 4.0],Active,
+DEFAULT_TTR_BOUNDS,lifecycle,backtest.py:DEFAULT_TTR_BOUNDS,[null; 24.0; 48.0; 72.0],[null; 24.0; 48.0; 72.0],[null; 6.0; 12.0; 24.0; 48.0; 72.0; 168.0],Active,
+DEFAULT_WHALE_THRESHOLDS,entry,backtest.py:DEFAULT_WHALE_THRESHOLDS,[null; 2.0; 3.0],[null; 2.0; 3.0],[null; 1.5; 2.0; 3.0; 4.0; 5.0],Active,
+DEFAULT_MOMENTUM_SIGNS,entry,backtest.py:DEFAULT_MOMENTUM_SIGNS,["any"; "pos"; "neg"],["any"; "pos"; "neg"],["any"; "pos"; "neg"],Active,
+find_edges.min_samples,backtest/validation,backtest.py:find_edges,5,"Not defined",[20; 50; 100],Active,CLI default 5 is aggressive for inference; recommend >=20 OOS
+run_oos_edge_validation.min_samples,backtest/validation,backtest.py:run_oos_edge_validation,20,"Not defined",[20; 50; 100],Active,
+CATEGORY_FEE_RATES,fee,paper_trader.py:CATEGORY_FEE_RATES,{"crypto": 0.07; "sports": 0.05; "geopolitics": 0.0},"Not defined","Use FeeModel schedule / PIT versions; do not sweep rates as strategy knobs",Active,Duplicated into research.fees.CATEGORY_TAKER_FEE_RATES with FEE_MODEL_VERSION
+PaperConfig.use_dynamic_fees,fee,paper_trader.py:PaperConfig,true,"Not defined",[true],Active,
+PaperConfig.fee_category,fee,paper_trader.py:PaperConfig,"crypto","Not defined","Market-specific PIT category; not a free sweep axis",Active,
+PaperConfig.fee_bps,fee,paper_trader.py:PaperConfig,0.0,"Not defined","Legacy only when use_dynamic_fees=False",Partially wired,Active only with --flat-fees
+PaperConfig.spread_slippage_bps,execution,paper_trader.py:PaperConfig,50.0,"Not defined",[10; 25; 50; 100; 200],Active,
+PaperConfig.bankroll,risk,paper_trader.py:PaperConfig,10000.0,"Not defined","Not a strategy parameter",Active,
+PaperConfig.kelly_fraction,risk,paper_trader.py:PaperConfig,0.25,"Not defined",[0.1; 0.25; 0.5],Active,
+PaperConfig.max_position_pct,risk,paper_trader.py:PaperConfig,0.05,"Not defined",[0.02; 0.05; 0.1],Active,
+PaperConfig.min_oos_ev_pct,entry,paper_trader.py:PaperConfig,10.0,"Not defined",[5.0; 8.0; 10.0; 15.0],Active,
+PaperConfig.max_open_positions,risk,paper_trader.py:PaperConfig,25,"Not defined",[10; 15; 25; 40],Active,
+PaperConfig.cooldown_sec,lifecycle,paper_trader.py:PaperConfig,60.0,"Not defined",[30; 60; 120; 300],Active,
+PaperConfig.take_profit_pct,exit,paper_trader.py:PaperConfig,null,"Not defined",[null; 0.1; 0.2; 0.3],Active,
+PaperConfig.stop_loss_pct,exit,paper_trader.py:PaperConfig,null,"Not defined",[null; 0.05; 0.1; 0.15],Active,
+PaperConfig.resolve_poll_sec,lifecycle,paper_trader.py:PaperConfig,60.0,"Not defined",[30; 60; 120],Active,
+SwingConfig.bankroll,risk,swing_trader.py:SwingConfig,10000.0,"Not defined","N/A",Active,
+SwingConfig.position_pct,risk,swing_trader.py:SwingConfig,0.05,"Not defined",[0.02; 0.05; 0.1],Active,
+SwingConfig.min_liquidity_usd,entry,swing_trader.py:SwingConfig,50000.0,"Not defined",[10000; 25000; 50000; 100000],Active,
+SwingConfig.min_ev_pct,entry,swing_trader.py:SwingConfig,8.0,"Not defined",[5.0; 8.0; 10.0; 12.0],Active,
+SwingConfig.rsi_period,signal/feature,swing_trader.py:SwingConfig,14,"Not defined",[7; 14; 21],Active,
+SwingConfig.rsi_oversold,entry,swing_trader.py:SwingConfig,25.0,"Not defined",[20; 25; 30; 35],Active,profiles RSI use 25; confluence 30
+SwingConfig.bb_period,signal/feature,swing_trader.py:SwingConfig,20,"Not defined",[10; 20; 30],Active,
+SwingConfig.bb_std,signal/feature,swing_trader.py:SwingConfig,2.5,"Not defined",[2.0; 2.5; 3.0],Active,
+SwingConfig.hurst_min,entry,swing_trader.py:SwingConfig,0.55,"Not defined",[0.5; 0.55; 0.6; 0.65],Active,
+SwingConfig.ema_fast,signal/feature,swing_trader.py:SwingConfig,5,"Not defined",[3; 5; 8],Active,
+SwingConfig.ema_slow,signal/feature,swing_trader.py:SwingConfig,20,"Not defined",[15; 20; 30],Active,
+SwingConfig.momentum_min_move,entry,swing_trader.py:SwingConfig,0.1,"Not defined",[0.05; 0.08; 0.1; 0.15],Active,profiles momentum use 0.08
+SwingConfig.whale_volume_ratio,entry,swing_trader.py:SwingConfig,2.0,"Not defined",[1.5; 2.0; 3.0],Active,
+SwingConfig.book_imbalance_min,microstructure,swing_trader.py:SwingConfig,3.0,"Not defined",[2.0; 2.5; 3.0; 4.0],Conflicting,vs confluence_book_min=2.5
+SwingConfig.book_price_lo,entry,swing_trader.py:SwingConfig,0.2,"Not defined",[0.1; 0.2; 0.3],Active,
+SwingConfig.book_price_hi,entry,swing_trader.py:SwingConfig,0.8,"Not defined",[0.7; 0.8; 0.9],Active,
+SwingConfig.take_profit_pct,exit,swing_trader.py:SwingConfig,0.2,"Not defined",[0.1; 0.15; 0.2; 0.3],Active,
+SwingConfig.take_profit_atr_mult,exit,swing_trader.py:SwingConfig,2.0,"Not defined",[1.5; 2.0; 3.0],Active,
+SwingConfig.stop_loss_pct,exit,swing_trader.py:SwingConfig,0.1,"Not defined",[0.05; 0.1; 0.15],Active,
+SwingConfig.stop_loss_atr_mult,exit,swing_trader.py:SwingConfig,1.0,"Not defined",[0.5; 1.0; 1.5],Active,
+SwingConfig.atr_period,signal/feature,swing_trader.py:SwingConfig,14,"Not defined",[7; 14; 21],Active,
+SwingConfig.atr_stop_mult,exit,swing_trader.py:SwingConfig,2.0,"Not defined",[1.5; 2.0; 3.0],Active,
+SwingConfig.stall_hours,lifecycle,swing_trader.py:SwingConfig,36.0,"Not defined",[24; 36; 48; 72],Conflicting,CLI default 48.0
+SwingConfig.use_bb_take_profit,exit,swing_trader.py:SwingConfig,true,"Not defined",[true; false],Active,
+SwingConfig.max_open_positions,risk,swing_trader.py:SwingConfig,15,"Not defined",[10; 15; 25],Active,
+SwingConfig.cooldown_sec,lifecycle,swing_trader.py:SwingConfig,300.0,"Not defined",[60; 120; 300],Conflicting,profiles use 120
+SwingConfig.history_len,signal/feature,swing_trader.py:SwingConfig,200,"Not defined",[100; 200; 500],Active,
+SwingConfig.require_confluence,entry,swing_trader.py:SwingConfig,false,"Not defined",[true; false],Active,
+SwingConfig.min_confluence,entry,swing_trader.py:SwingConfig,2,"Not defined",[2; 3],Active,
+SwingConfig.confluence_rsi,entry,swing_trader.py:SwingConfig,30.0,"Not defined",[25; 30; 35],Active,
+SwingConfig.confluence_volume_usd,entry,swing_trader.py:SwingConfig,25000.0,"Not defined",[10000; 25000; 50000],Active,
+SwingConfig.confluence_book_min,microstructure,swing_trader.py:SwingConfig,2.5,"Not defined",[2.0; 2.5; 3.0],Conflicting,
+DEFAULT_CHUNK_ROWS,data/ingest,ingest.py:DEFAULT_CHUNK_ROWS,500000,"Not defined","Not a research parameter",Active,
+cli.paper-trade.duration,CLI/config,cli.py:paper-trade --duration,120.0,"Not defined","Ops only (GHA uses 18000)",Active,
+cli.swing-trade.stall_hours,lifecycle,cli.py:swing-trade --stall-hours,48.0,"Not defined",[24; 36; 48; 72],Conflicting,Conflicts with SwingConfig.stall_hours=36.0
+StrategyParams.require_price_volume_divergence,entry,backtest.py:StrategyParams,false,"Not defined",[false; true],Partially wired,Field exists but iter_grid_params never sets True — not in default grid
+momentum_6h grid,entry,backtest.py:iter_grid_params,["any"],["any"],["any"; "pos"; "neg"],Partially wired,Axis declared but default grid freezes momentum_6h at any
+logit_half_tick,signal/feature,research/logit.py:DEFAULT_HALF_TICK,0.005,"Not defined",[0.001; 0.005; 0.01],Active,New foundation
+FEE_MODEL_VERSION,fee,research/fees.py:FEE_MODEL_VERSION,"2026-07-polymarket-v1","Not defined","Version pin only",Active,New foundation
+ExecutionConfig.latency_ms,execution,research/execution.py:ExecutionConfig,50.0,"Not defined",[0; 50; 100; 250; 500],Active,New; not yet wired into PaperTrader path
+exogenous.*,exogenous,research/exogenous.py,null,"Not defined","Blocked until PIT providers exist",Declared but unused,Provider stubs only
