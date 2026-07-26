@@ -521,8 +521,8 @@ Total parameters: **66**
 - Existing sweep range: `Not defined`
 - Recommended sweep range: `[24, 36, 48, 72]`
 - Usage: SwingTrader, profiles.py
-- Status: **Conflicting**
-- Notes: CLI default 48.0
+- Status: **Active**
+- Notes: CLI default aligned to 36.0
 
 ### `SwingConfig.max_open_positions`
 - Category: risk
@@ -546,12 +546,12 @@ Total parameters: **66**
 ### `cli.swing-trade.stall_hours`
 - Category: lifecycle
 - Declaration: `cli.py:swing-trade --stall-hours`
-- Current default: `48.0`
+- Current default: `36.0`
 - Existing sweep range: `Not defined`
 - Recommended sweep range: `[24, 36, 48, 72]`
 - Usage: cli._cmd_swing_trade
-- Status: **Conflicting**
-- Notes: Conflicts with SwingConfig.stall_hours=36.0
+- Status: **Active**
+- Notes: Aligned with SwingConfig.stall_hours=36.0 (was 48.0)
 
 ### `FEE_MODEL_VERSION`
 - Category: fee

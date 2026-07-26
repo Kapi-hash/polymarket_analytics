@@ -15,10 +15,10 @@
     "exogenous": 1
   },
   "by_status": {
-    "Active": 56,
+    "Active": 58,
     "Hardcoded": 1,
     "Partially wired": 3,
-    "Conflicting": 5,
+    "Conflicting": 3,
     "Declared but unused": 1
   }
 }

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from pathlib import Path
 
 import polars as pl
@@ -195,3 +196,105 @@ def test_exogenous_providers_unavailable():
 def test_bh_fdr():
     flags = benjamini_hochberg([0.001, 0.01, 0.04, 0.20], alpha=0.05)
     assert flags[0] is True
+
+
+def test_logit_technicals_and_arcsine():
+    from polymarket_analytics.research.technical import arcsine_sqrt, logit_rsi, logit_ema_cross
+
+    assert arcsine_sqrt(0.5) == pytest.approx(2.0 * math.asin(math.sqrt(0.5)))
+    prices = [0.55 - 0.01 * i for i in range(40)]
+    rsi = logit_rsi(prices, period=14)
+    assert rsi is not None and 0 <= rsi <= 100
+    cross = logit_ema_cross(prices, fast=5, slow=20)
+    assert cross["ema_fast"] is not None and cross["ema_slow"] is not None
+
+    rows = []
+    for i in range(60):
+        rows.append(
+            {
+                "token_id": "tok-a",
+                "traded_at": f"2023-04-{(i // 24) + 10:02d}T{i % 24:02d}:00:00Z",
+                "price": 0.40 + (i % 20) / 100.0,
+            }
+        )
+    df = pl.DataFrame(rows).with_columns(
+        pl.col("traded_at").str.to_datetime(time_zone="UTC")
+    )
+    out = apply_features(df, ["arcsine_price", "logit_rsi_ema_mad"])
+    assert "arcsine_price" in out.columns
+    assert "logit_rsi" in out.columns
+    assert out["logit_rsi"].drop_nulls().len() > 0
+
+
+def test_paper_trader_risk_and_tpsl_ordering():
+    from polymarket_analytics.backtest import StrategyParams
+    from polymarket_analytics.live_feed import LiveFeatures
+    from polymarket_analytics.paper_trader import PaperConfig, PaperTrader
+
+    trader = PaperTrader(
+        config=PaperConfig(
+            bankroll=10_000.0,
+            max_drawdown_halt_pct=5.0,
+            take_profit_pct=0.10,
+            stop_loss_pct=0.10,
+            tp_sl_prefer="stop_first",
+            cooldown_sec=0.0,
+            min_oos_ev_pct=0.0,
+            require_persists=False,
+        ),
+        strategies=[
+            (
+                StrategyParams(price_bucket=None, min_whale_ratio=None, momentum_1h="any", side="BUY"),
+                50.0,
+                0.70,
+            )
+        ],
+    )
+    # Force drawdown halt via peak >> equity
+    trader.peak_equity = 20_000.0
+    trader.cash = 10_000.0
+    feat = LiveFeatures(
+        token_id="t1",
+        condition_id="c1",
+        ts=1_000.0,
+        price=0.45,
+        size=10.0,
+        whale_ratio=5.0,
+        momentum_1h=0.01,
+        n_trades_1h=5,
+        best_ask=0.46,
+    )
+    assert trader.on_features(feat) is None
+    assert trader.risk_rejects >= 1
+
+    # Reset for TP/SL same-tick preference
+    trader2 = PaperTrader(
+        config=PaperConfig(
+            bankroll=10_000.0,
+            take_profit_pct=0.0,
+            stop_loss_pct=0.0,
+            tp_sl_prefer="stop_first",
+            cooldown_sec=0.0,
+        ),
+        strategies=[],
+    )
+    from polymarket_analytics.paper_trader import PaperPosition
+
+    trader2.positions.append(
+        PaperPosition(
+            position_id="p1",
+            token_id="t2",
+            condition_id="c2",
+            strategy_label="x",
+            entry_ts=0.0,
+            entry_price_raw=0.50,
+            entry_price_fill=0.50,
+            shares=10.0,
+            notional=5.0,
+            fees=0.0,
+            mark_price=0.50,
+        )
+    )
+    trader2.cash -= 5.0
+    trader2._evaluate_stops(1.0)
+    assert trader2.positions[0].status == "stop_loss"

@@ -56,6 +56,56 @@
       "schedule_notes": "Bundled with 2026-07-polymarket-v1"
     }
   },
+  "execution_stress_tiny": [
+    {
+      "latency_ms": 0.0,
+      "ask": 0.45,
+      "avg_price": 0.45,
+      "fee": 1.7325,
+      "markout": 0.010000000000000009,
+      "fee_model_version": "2026-07-polymarket-v1"
+    },
+    {
+      "latency_ms": 0.0,
+      "ask": 0.4525,
+      "avg_price": 0.4525,
+      "fee": 1.734206,
+      "markout": 0.012500000000000011,
+      "fee_model_version": "2026-07-polymarket-v1"
+    },
+    {
+      "latency_ms": 50.0,
+      "ask": 0.45,
+      "avg_price": 0.45,
+      "fee": 1.7325,
+      "markout": 0.010000000000000009,
+      "fee_model_version": "2026-07-polymarket-v1"
+    },
+    {
+      "latency_ms": 50.0,
+      "ask": 0.4525,
+      "avg_price": 0.4525,
+      "fee": 1.734206,
+      "markout": 0.012500000000000011,
+      "fee_model_version": "2026-07-polymarket-v1"
+    },
+    {
+      "latency_ms": 250.0,
+      "ask": 0.45,
+      "avg_price": 0.45,
+      "fee": 1.7325,
+      "markout": 0.010000000000000009,
+      "fee_model_version": "2026-07-polymarket-v1"
+    },
+    {
+      "latency_ms": 250.0,
+      "ask": 0.4525,
+      "avg_price": 0.4525,
+      "fee": 1.734206,
+      "markout": 0.012500000000000011,
+      "fee_model_version": "2026-07-polymarket-v1"
+    }
+  ],
   "walk_forward": {
     "n_folds": 2,
     "folds": [
@@ -108,7 +158,7 @@
     "notes": "Scaffolding only \u2014 not a claim of alpha"
   },
   "feature_coverage": {
-    "n_features": 15,
+    "n_features": 17,
     "by_category": {
       "prediction_market": {
         "implemented": 4,
@@ -118,11 +168,11 @@
         "total": 7
       },
       "technical": {
-        "implemented": 3,
+        "implemented": 5,
         "partial": 0,
         "blocked": 0,
         "stub": 0,
-        "total": 3
+        "total": 5
       },
       "microstructure": {
         "implemented": 0,
@@ -150,6 +200,8 @@
       "logit_price",
       "logit_edge_vs_half",
       "ttr_info_hazard",
+      "arcsine_price",
+      "logit_rsi_ema_mad",
       "whale_ratio",
       "volume_spike_1h_24h",
       "decay_adjusted_velocity",

@@ -8,6 +8,7 @@ from typing import Any, Callable, Final, Literal, Sequence
 import polars as pl
 
 from polymarket_analytics.research.logit import DEFAULT_HALF_TICK, attach_logit_columns, logit_expr
+from polymarket_analytics.research.technical import attach_arcsine, attach_logit_technicals
 
 FeatureCategory = Literal[
     "prediction_market",
@@ -88,6 +89,22 @@ def _compute_complete_set_residual(df: pl.DataFrame, **kwargs: Any) -> pl.DataFr
         return df.with_columns(pl.lit(None, dtype=pl.Float64).alias("complete_set_residual"))
     return df.with_columns(
         (pl.col(yes_col) + pl.col(no_col) - 1.0).alias("complete_set_residual")
+    )
+
+
+def _compute_arcsine_price(df: pl.DataFrame, **kwargs: Any) -> pl.DataFrame:
+    return attach_arcsine(df)
+
+
+def _compute_logit_technicals(df: pl.DataFrame, **kwargs: Any) -> pl.DataFrame:
+    return attach_logit_technicals(
+        df,
+        rsi_period=int(kwargs.get("rsi_period", 14)),
+        ema_fast=int(kwargs.get("ema_fast", 5)),
+        ema_slow=int(kwargs.get("ema_slow", 20)),
+        band_window=int(kwargs.get("band_window", 48)),
+        band_k=float(kwargs.get("band_k", 2.5)),
+        half_tick=float(kwargs.get("half_tick", DEFAULT_HALF_TICK)),
     )
 
 
@@ -218,6 +235,49 @@ register(
         status="implemented",
         notes="Simple 1/(1+TTR) hazard proxy",
         compute=_compute_ttr_hazard,
+    )
+)
+register(
+    FeatureSpec(
+        name="arcsine_price",
+        version="1.0.0",
+        category="technical",
+        strategy_families=("swing", "edge"),
+        required_columns=("price",),
+        required_sources=("trades",),
+        defaults={"half_tick": DEFAULT_HALF_TICK},
+        sweep_parameters={},
+        point_in_time_safe=True,
+        status="implemented",
+        notes="y=2 arcsin(sqrt(p)) variance-stabilizing transform",
+        compute=_compute_arcsine_price,
+    )
+)
+register(
+    FeatureSpec(
+        name="logit_rsi_ema_mad",
+        version="1.0.0",
+        category="technical",
+        strategy_families=("swing",),
+        required_columns=("price", "token_id"),
+        required_sources=("trades",),
+        defaults={
+            "rsi_period": 14,
+            "ema_fast": 5,
+            "ema_slow": 20,
+            "band_window": 48,
+            "band_k": 2.5,
+        },
+        sweep_parameters={
+            "rsi_period": [5, 8, 14, 21, 34],
+            "ema_fast": [3, 5, 8, 12],
+            "ema_slow": [10, 20, 24, 48],
+            "band_k": [1.5, 2.0, 2.5, 3.0],
+        },
+        point_in_time_safe=True,
+        status="implemented",
+        notes="Logit-space RSI, EMA cross, median/MAD bands; panel-grouped",
+        compute=_compute_logit_technicals,
     )
 )
 register(

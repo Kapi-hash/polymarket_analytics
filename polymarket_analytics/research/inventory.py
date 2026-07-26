@@ -58,9 +58,10 @@ KNOWN_CONFLICTS: tuple[dict[str, Any], ...] = (
         "concept": "stall_hours",
         "locations": [
             "swing_trader.SwingConfig.stall_hours=36.0",
-            "cli.swing-trade --stall-hours default=48.0",
+            "cli.swing-trade --stall-hours default=36.0",
         ],
-        "notes": "CLI default overrides dataclass when swing-trade invoked; profile builders use 36.0",
+        "notes": "Resolved 2026-07-26: CLI default aligned to SwingConfig/profiles (was 48.0)",
+        "status": "Resolved",
     },
     {
         "concept": "cooldown_sec (swing)",
@@ -503,7 +504,7 @@ def build_baseline_inventory() -> list[ParameterInventoryItem]:
         ("SwingConfig.stop_loss_atr_mult", 1.0, "exit", [0.5, 1.0, 1.5], "Active", ""),
         ("SwingConfig.atr_period", 14, "signal/feature", [7, 14, 21], "Active", ""),
         ("SwingConfig.atr_stop_mult", 2.0, "exit", [1.5, 2.0, 3.0], "Active", ""),
-        ("SwingConfig.stall_hours", 36.0, "lifecycle", [24, 36, 48, 72], "Conflicting", "CLI default 48.0"),
+        ("SwingConfig.stall_hours", 36.0, "lifecycle", [24, 36, 48, 72], "Active", "CLI default aligned to 36.0"),
         ("SwingConfig.use_bb_take_profit", True, "exit", [True, False], "Active", ""),
         ("SwingConfig.max_open_positions", 15, "risk", [10, 15, 25], "Active", ""),
         ("SwingConfig.cooldown_sec", 300.0, "lifecycle", [60, 120, 300], "Conflicting", "profiles use 120"),
@@ -551,12 +552,12 @@ def build_baseline_inventory() -> list[ParameterInventoryItem]:
         name="cli.swing-trade.stall_hours",
         category="lifecycle",
         declaration_location="cli.py:swing-trade --stall-hours",
-        current_default=48.0,
+        current_default=36.0,
         existing_sweep_range="Not defined",
         recommended_sweep_range=[24, 36, 48, 72],
         usage_sites=["cli._cmd_swing_trade"],
-        status="Conflicting",
-        notes="Conflicts with SwingConfig.stall_hours=36.0",
+        status="Active",
+        notes="Aligned with SwingConfig.stall_hours=36.0 (was 48.0)",
     )
     add(
         name="StrategyParams.require_price_volume_divergence",

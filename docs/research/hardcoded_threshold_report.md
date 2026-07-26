@@ -12,9 +12,10 @@
 - `polymarket_analytics/swing_trader.py:144` literal=1e-12 `std <= 1e-12`
 - `polymarket_analytics/swing_trader.py:154` literal=3 `len(ks) < 3`
 - `polymarket_analytics/swing_trader.py:162` literal=1e-12 `den <= 1e-12`
-- `polymarket_analytics/paper_trader.py:272` literal=3.0 `feat.whale_ratio <= 3.0`
-- `polymarket_analytics/paper_trader.py:644` literal=0.99 `float(px) >= 0.99`
+- `polymarket_analytics/paper_trader.py:330` literal=3.0 `feat.whale_ratio <= 3.0`
+- `polymarket_analytics/paper_trader.py:744` literal=0.99 `float(px) >= 0.99`
 - `polymarket_analytics/live_feed.py:42` literal=1000000000000.0 `ts > 1000000000000.0`
 - `polymarket_analytics/live_feed.py:44` literal=10000000000.0 `ts > 10000000000.0`
 - `polymarket_analytics/live_feed.py:50` literal=1000000000000.0 `ts > 1000000000000.0`
 - `polymarket_analytics/live_feed.py:52` literal=10000000000.0 `ts > 10000000000.0`
+- `polymarket_analytics/research/technical.py:45` literal=1e-12 `avg_loss <= 1e-12`

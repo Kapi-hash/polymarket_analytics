@@ -900,7 +900,12 @@ def build_parser() -> argparse.ArgumentParser:
     swing_p.add_argument("--bankroll", type=float, default=10_000.0)
     swing_p.add_argument("--position-pct", type=float, default=0.05)
     swing_p.add_argument("--take-profit-pct", type=float, default=0.20)
-    swing_p.add_argument("--stall-hours", type=float, default=48.0)
+    swing_p.add_argument(
+        "--stall-hours",
+        type=float,
+        default=36.0,
+        help="Time-exit hours (aligned with SwingConfig.stall_hours default)",
+    )
     swing_p.add_argument("--atr-stop-mult", type=float, default=2.0)
     swing_p.add_argument("--min-liquidity", type=float, default=50_000.0)
     swing_p.add_argument(

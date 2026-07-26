@@ -17,6 +17,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from polymarket_analytics.backtest import StrategyParams, compute_edge_stats, apply_strategy_filter
+from polymarket_analytics.research.execution import BookLevel, simulate_aggressive_fill, ExecutionConfig
 from polymarket_analytics.research.fees import FEE_MODEL_VERSION, compute_fill_fee
 from polymarket_analytics.research.feature_registry import apply_features, coverage_report
 from polymarket_analytics.research.inventory import write_inventory_artifacts
@@ -63,7 +64,10 @@ def main() -> int:
     print("inventory_artifacts", {k: str(v) for k, v in arts.items()})
 
     df = _synthetic_frame()
-    df = apply_features(df, ["logit_price", "logit_edge_vs_half", "ttr_info_hazard"])
+    df = apply_features(
+        df,
+        ["logit_price", "logit_edge_vs_half", "ttr_info_hazard", "arcsine_price"],
+    )
 
     params = StrategyParams(
         price_bucket="0.40-0.50",
@@ -77,6 +81,28 @@ def main() -> int:
     fee = compute_fill_fee(100.0, 0.45, role="taker", category="crypto")
     fee_maker = compute_fill_fee(100.0, 0.45, role="maker", category="crypto")
     fee_free = compute_fill_fee(100.0, 0.45, role="taker", category="geopolitics")
+
+    # Tiny execution stress (NOT a full sweep): 3 latency × 2 slip scenarios
+    exec_stress = []
+    for latency_ms in (0.0, 50.0, 250.0):
+        for slip_ask in (0.45, 0.4525):
+            fill = simulate_aggressive_fill(
+                "buy",
+                size=100.0,
+                levels=[BookLevel(price=slip_ask, size=500.0)],
+                cfg=ExecutionConfig(latency_ms=latency_ms, fee_category="crypto"),
+                mid_after=0.44,
+            )
+            exec_stress.append(
+                {
+                    "latency_ms": latency_ms,
+                    "ask": slip_ask,
+                    "avg_price": fill.avg_price,
+                    "fee": fill.fee,
+                    "markout": fill.markout,
+                    "fee_model_version": (fill.meta or {}).get("fee_model_version"),
+                }
+            )
 
     def evaluate(train: pl.DataFrame, test: pl.DataFrame) -> dict:
         if train.is_empty() or "price" not in train.columns:
@@ -122,6 +148,7 @@ def main() -> int:
         "logit_edge_example": logit_edge(0.55, 0.45),
         "edge": edge.to_dict(),
         "fees": {"taker": fee, "maker": fee_maker, "fee_free": fee_free},
+        "execution_stress_tiny": exec_stress,
         "walk_forward": wf,
         "multiple_testing": mt.to_dict(),
         "feature_coverage": coverage_report(),

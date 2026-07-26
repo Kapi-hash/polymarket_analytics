@@ -46,7 +46,7 @@ SwingConfig.stop_loss_pct,exit,swing_trader.py:SwingConfig,0.1,"Not defined",[0.
 SwingConfig.stop_loss_atr_mult,exit,swing_trader.py:SwingConfig,1.0,"Not defined",[0.5; 1.0; 1.5],Active,
 SwingConfig.atr_period,signal/feature,swing_trader.py:SwingConfig,14,"Not defined",[7; 14; 21],Active,
 SwingConfig.atr_stop_mult,exit,swing_trader.py:SwingConfig,2.0,"Not defined",[1.5; 2.0; 3.0],Active,
-SwingConfig.stall_hours,lifecycle,swing_trader.py:SwingConfig,36.0,"Not defined",[24; 36; 48; 72],Conflicting,CLI default 48.0
+SwingConfig.stall_hours,lifecycle,swing_trader.py:SwingConfig,36.0,"Not defined",[24; 36; 48; 72],Active,CLI default aligned to 36.0
 SwingConfig.use_bb_take_profit,exit,swing_trader.py:SwingConfig,true,"Not defined",[true; false],Active,
 SwingConfig.max_open_positions,risk,swing_trader.py:SwingConfig,15,"Not defined",[10; 15; 25],Active,
 SwingConfig.cooldown_sec,lifecycle,swing_trader.py:SwingConfig,300.0,"Not defined",[60; 120; 300],Conflicting,profiles use 120
@@ -58,7 +58,7 @@ SwingConfig.confluence_volume_usd,entry,swing_trader.py:SwingConfig,25000.0,"Not
 SwingConfig.confluence_book_min,microstructure,swing_trader.py:SwingConfig,2.5,"Not defined",[2.0; 2.5; 3.0],Conflicting,
 DEFAULT_CHUNK_ROWS,data/ingest,ingest.py:DEFAULT_CHUNK_ROWS,500000,"Not defined","Not a research parameter",Active,
 cli.paper-trade.duration,CLI/config,cli.py:paper-trade --duration,120.0,"Not defined","Ops only (GHA uses 18000)",Active,
-cli.swing-trade.stall_hours,lifecycle,cli.py:swing-trade --stall-hours,48.0,"Not defined",[24; 36; 48; 72],Conflicting,Conflicts with SwingConfig.stall_hours=36.0
+cli.swing-trade.stall_hours,lifecycle,cli.py:swing-trade --stall-hours,36.0,"Not defined",[24; 36; 48; 72],Active,Aligned with SwingConfig.stall_hours=36.0 (was 48.0)
 StrategyParams.require_price_volume_divergence,entry,backtest.py:StrategyParams,false,"Not defined",[false; true],Partially wired,Field exists but iter_grid_params never sets True — not in default grid
 momentum_6h grid,entry,backtest.py:iter_grid_params,["any"],["any"],["any"; "pos"; "neg"],Partially wired,Axis declared but default grid freezes momentum_6h at any
 logit_half_tick,signal/feature,research/logit.py:DEFAULT_HALF_TICK,0.005,"Not defined",[0.001; 0.005; 0.01],Active,New foundation

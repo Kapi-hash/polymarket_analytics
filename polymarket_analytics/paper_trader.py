@@ -15,10 +15,18 @@ from typing import Any, Mapping, Sequence
 
 from polymarket_analytics.backtest import StrategyParams, params_from_edge_row
 from polymarket_analytics.live_feed import LiveFeatures
+from polymarket_analytics.research.execution import (
+    BookLevel,
+    order_tp_sl_tick,
+    simulate_aggressive_fill,
+    ExecutionConfig,
+)
 from polymarket_analytics.research.fees import (
     CATEGORY_TAKER_FEE_RATES as CATEGORY_FEE_RATES,
     FEE_MODEL_VERSION,
+    compute_fill_fee,
 )
+from polymarket_analytics.research.risk import RiskLimits, RiskState, check_entry_allowed
 from polymarket_analytics.schema import PRICE_BUCKET_BREAKS, PRICE_BUCKET_LABELS
 
 GAMMA_MARKETS_URL = "https://gamma-api.polymarket.com/markets"
@@ -129,9 +137,26 @@ class PaperConfig:
     take_profit_pct: float | None = None
     stop_loss_pct: float | None = None
     resolve_poll_sec: float = 60.0
+    # Execution / risk scaffolding (research.execution + research.risk)
+    latency_ms: float = 50.0
+    use_book_walk: bool = False
+    max_drawdown_halt_pct: float = 20.0
+    max_gross_exposure_pct: float = 0.50
+    per_event_cap_pct: float = 0.10
+    tp_sl_prefer: str = "stop_first"  # stop_first | tp_first
 
     def effective_fee_rate(self) -> float:
         return resolve_fee_rate(self.fee_category, self.fee_rate)
+
+    def risk_limits(self) -> RiskLimits:
+        return RiskLimits(
+            max_position_pct=self.max_position_pct,
+            max_open_positions=self.max_open_positions,
+            max_gross_exposure_pct=self.max_gross_exposure_pct,
+            max_drawdown_halt_pct=self.max_drawdown_halt_pct,
+            per_event_cap_pct=self.per_event_cap_pct,
+            cooldown_sec=self.cooldown_sec,
+        )
 
 
 @dataclass
@@ -202,12 +227,40 @@ class PaperTrader:
     signals_fired: int = 0
     fills: int = 0
     resolutions: int = 0
+    risk_rejects: int = 0
+    peak_equity: float = 0.0
     _last_entry_ts: dict[str, float] = field(default_factory=dict)
     _last_resolve_poll: float = 0.0
+    _last_global_entry_ts: float = 0.0
 
     def __post_init__(self) -> None:
         if self.cash <= 0:
             self.cash = float(self.config.bankroll)
+        if self.peak_equity <= 0:
+            self.peak_equity = float(self.config.bankroll)
+
+    def _update_peak_equity(self) -> None:
+        eq = self.equity
+        if eq > self.peak_equity:
+            self.peak_equity = eq
+
+    def _risk_state(self) -> RiskState:
+        self._update_peak_equity()
+        per_event: dict[str, float] = {}
+        gross = 0.0
+        for p in self.open_positions:
+            notional = p.notional
+            gross += notional
+            per_event[p.condition_id] = per_event.get(p.condition_id, 0.0) + notional
+        return RiskState(
+            equity=self.equity,
+            cash=self.cash,
+            peak_equity=self.peak_equity,
+            n_open=len(self.open_positions),
+            gross_exposure=gross,
+            per_event_exposure=per_event,
+            last_entry_ts=self._last_global_entry_ts,
+        )
 
     @classmethod
     def from_oos_report(
@@ -245,9 +298,14 @@ class PaperTrader:
         if not self.config.use_dynamic_fees:
             notional = max(shares, 0.0) * max(price, 0.0)
             return notional * (self.config.fee_bps / 10_000.0)
-        return dynamic_taker_fee(
-            shares, price, fee_rate=self.config.effective_fee_rate()
+        info = compute_fill_fee(
+            shares,
+            price,
+            role="taker",
+            category=self.config.fee_category,
+            fee_rate=self.config.fee_rate,
         )
+        return float(info["fee"])
 
     def matches(self, feat: LiveFeatures, params: StrategyParams) -> bool:
         bucket = price_bucket_label(feat.price)
@@ -275,8 +333,25 @@ class PaperTrader:
 
     def apply_fill_price(self, raw_price: float, *, best_ask: float | None) -> float:
         """Model buy slippage only (fees applied separately via dynamic curve)."""
+        if self.config.use_book_walk and best_ask is not None:
+            # L1 walk with ample size — same as crossing the ask when depth unknown.
+            fill = simulate_aggressive_fill(
+                "buy",
+                size=1.0,
+                levels=[BookLevel(price=float(best_ask), size=1e9)],
+                cfg=ExecutionConfig(
+                    latency_ms=self.config.latency_ms,
+                    role="taker",
+                    fee_category=self.config.fee_category,
+                    fee_model_version=FEE_MODEL_VERSION,
+                ),
+            )
+            if fill.filled_size > 0 and fill.avg_price > 0:
+                return min(max(fill.avg_price, 0.01), 0.99)
         slip = self.config.spread_slippage_bps / 10_000.0
         base = best_ask if best_ask is not None else raw_price
+        # Latency is recorded conceptually; paper path still fills on current quote.
+        _ = self.config.latency_ms
         fill = min(max(base * (1.0 + slip), 0.01), 0.99)
         return fill
 
@@ -307,6 +382,7 @@ class PaperTrader:
         # Early exits before new entries
         self._evaluate_stops(feat.ts)
         self.maybe_poll_resolutions(now=feat.ts)
+        self._update_peak_equity()
 
         if len(self.open_positions) >= self.config.max_open_positions:
             return None
@@ -366,6 +442,17 @@ class PaperTrader:
             if cost > self.cash or shares <= 0:
                 continue
 
+            allowed, reason = check_entry_allowed(
+                self._risk_state(),
+                self.config.risk_limits(),
+                notional=notional,
+                event_id=feat.condition_id or feat.token_id,
+                now_ts=feat.ts,
+            )
+            if not allowed:
+                self.risk_rejects += 1
+                continue
+
             self.cash -= cost
             pos = PaperPosition(
                 position_id=str(uuid.uuid4())[:8],
@@ -385,7 +472,9 @@ class PaperTrader:
             )
             self.positions.append(pos)
             self._last_entry_ts[feat.token_id] = feat.ts
+            self._last_global_entry_ts = feat.ts
             self.fills += 1
+            self._update_peak_equity()
             self.persist()
             return pos
         return None
@@ -395,18 +484,25 @@ class PaperTrader:
         sl = self.config.stop_loss_pct
         if tp is None and sl is None:
             return
+        prefer = "stop_first" if self.config.tp_sl_prefer != "tp_first" else "tp_first"
         for pos in list(self.open_positions):
             if pos.entry_price_fill <= 0:
                 continue
-            ret = (pos.mark_price - pos.entry_price_fill) / pos.entry_price_fill
-            if tp is not None and ret >= tp:
+            decision = order_tp_sl_tick(
+                entry=pos.entry_price_fill,
+                mark=pos.mark_price,
+                take_profit_pct=tp,
+                stop_loss_pct=abs(sl) if sl is not None else None,
+                prefer=prefer,  # type: ignore[arg-type]
+            )
+            if decision == "take_profit":
                 self.close_position(
                     pos.position_id,
                     exit_price=pos.mark_price,
                     exit_ts=now,
                     reason="take_profit",
                 )
-            elif sl is not None and ret <= -abs(sl):
+            elif decision == "stop_loss":
                 self.close_position(
                     pos.position_id,
                     exit_price=pos.mark_price,
@@ -547,9 +643,13 @@ class PaperTrader:
             "signals_fired": self.signals_fired,
             "fills": self.fills,
             "resolutions": self.resolutions,
+            "risk_rejects": self.risk_rejects,
+            "peak_equity": self.peak_equity,
             "fee_category": self.config.fee_category,
             "fee_rate": self.config.effective_fee_rate(),
             "fee_model_version": FEE_MODEL_VERSION,
+            "latency_ms": self.config.latency_ms,
+            "use_book_walk": self.config.use_book_walk,
             "use_dynamic_fees": self.config.use_dynamic_fees,
             "n_strategies": len(self.strategies),
             "strategies": [

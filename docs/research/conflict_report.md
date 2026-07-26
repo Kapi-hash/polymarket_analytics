@@ -1,6 +1,6 @@
 # Configuration conflict report
 
-- **stall_hours**: {'concept': 'stall_hours', 'locations': ['swing_trader.SwingConfig.stall_hours=36.0', 'cli.swing-trade --stall-hours default=48.0'], 'notes': 'CLI default overrides dataclass when swing-trade invoked; profile builders use 36.0'}
+- **stall_hours**: {'concept': 'stall_hours', 'locations': ['swing_trader.SwingConfig.stall_hours=36.0', 'cli.swing-trade --stall-hours default=36.0'], 'notes': 'Resolved 2026-07-26: CLI default aligned to SwingConfig/profiles (was 48.0)', 'status': 'Resolved'}
 
 - **cooldown_sec (swing)**: {'concept': 'cooldown_sec (swing)', 'locations': ['swing_trader.SwingConfig.cooldown_sec=300.0', 'profiles._build_* cooldown_sec=120.0'], 'notes': 'Incubator profiles tighten cooldown vs bare SwingConfig default'}
 

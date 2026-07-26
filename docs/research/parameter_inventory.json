@@ -900,8 +900,8 @@
       "SwingTrader",
       "profiles.py"
     ],
-    "status": "Conflicting",
-    "notes": "CLI default 48.0"
+    "status": "Active",
+    "notes": "CLI default aligned to 36.0"
   },
   {
     "name": "SwingConfig.use_bb_take_profit",
@@ -1093,7 +1093,7 @@
     "name": "cli.swing-trade.stall_hours",
     "category": "lifecycle",
     "declaration_location": "cli.py:swing-trade --stall-hours",
-    "current_default": 48.0,
+    "current_default": 36.0,
     "existing_sweep_range": "Not defined",
     "recommended_sweep_range": [
       24,
@@ -1104,8 +1104,8 @@
     "usage_sites": [
       "cli._cmd_swing_trade"
     ],
-    "status": "Conflicting",
-    "notes": "Conflicts with SwingConfig.stall_hours=36.0"
+    "status": "Active",
+    "notes": "Aligned with SwingConfig.stall_hours=36.0 (was 48.0)"
   },
   {
     "name": "StrategyParams.require_price_volume_divergence",
