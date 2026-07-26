@@ -1,4 +1,4 @@
-"""CLI entrypoints: ingest, compute-features, find-edges, backtest, paper-trade, status."""
+"""CLI entrypoints: ingest, features, edges, backtest, paper-trade, swing-trade, status."""
 
 from __future__ import annotations
 
@@ -26,6 +26,7 @@ DEFAULT_PARQUET = ROOT / "data" / "parquet"
 DEFAULT_WAREHOUSE = ROOT / "data" / "warehouse.duckdb"
 DEFAULT_OOS_REPORT = ROOT / "data" / "oos_edge_report.json"
 DEFAULT_PAPER_JOURNAL = ROOT / "data" / "paper_trades.json"
+DEFAULT_SWING_JOURNAL = ROOT / "data" / "swing_trades.json"
 FIXTURES = ROOT / "fixtures"
 
 
@@ -302,6 +303,156 @@ def _cmd_paper_trade(args: argparse.Namespace) -> int:
             print(json.dumps({"ok": False, "error": str(exc), **trader.snapshot()}, indent=2, default=str))
             return 1
 
+        feed.stop()
+        trader.persist()
+        _render("stopped")
+        print(json.dumps({"ok": True, "mode": "live", **trader.snapshot()}, indent=2, default=str))
+        return 0
+
+    return int(asyncio.run(_run_live()))
+
+
+def _cmd_swing_trade(args: argparse.Namespace) -> int:
+    """Swing trading dashboard / demo — simulated fills only."""
+    from polymarket_analytics.live_feed import (
+        LiveFeatureEngine,
+        MarketWebSocketFeed,
+        TopOfBook,
+        fetch_active_token_ids,
+    )
+    from polymarket_analytics.swing_trader import (
+        SwingConfig,
+        SwingTrader,
+        TokenBar,
+        format_swing_dashboard,
+        format_swing_summary,
+        inject_swing_demo_bars,
+    )
+
+    if getattr(args, "summary", False):
+        print(format_swing_summary(Path(args.journal)))
+        return 0
+
+    min_ev_pp = float(args.min_ev)
+    if min_ev_pp <= 1.0:
+        min_ev_pp *= 100.0
+
+    cfg = SwingConfig(
+        bankroll=args.bankroll,
+        position_pct=args.position_pct,
+        min_ev_pct=min_ev_pp,
+        take_profit_pct=args.take_profit_pct,
+        stall_hours=args.stall_hours,
+        atr_stop_mult=args.atr_stop_mult,
+        min_liquidity_usd=args.min_liquidity,
+    )
+    strategies = tuple(args.strategy) if args.strategy else None
+    trader = SwingTrader(config=cfg, journal_path=Path(args.journal))
+    trader.persist()
+
+    def _render(status: str) -> None:
+        print("\033[2J\033[H", end="", flush=True)
+        print(
+            format_swing_dashboard(
+                trader,
+                feed_status=status,
+                extra_lines=[
+                    f" journal={args.journal}",
+                    f" min_ev>={min_ev_pp:.1f}pp  strategies={strategies or 'all'}",
+                    " Ctrl+C to stop (paper only)",
+                ],
+            ),
+            flush=True,
+        )
+
+    if args.demo:
+        bars = inject_swing_demo_bars(n=args.demo_ticks)
+        for token_id, condition_id, bar in bars:
+            trader.on_bar(token_id, condition_id, bar, strategies=strategies)
+            _render("demo")
+            time.sleep(args.demo_sleep)
+        trader.persist()
+        print(
+            json.dumps(
+                {"ok": True, "mode": "demo", **trader.snapshot()},
+                indent=2,
+                default=str,
+            )
+        )
+        return 0
+
+    async def _run_live() -> int:
+        token_ids = list(args.token_id) if args.token_id else []
+        if not token_ids:
+            try:
+                token_ids = fetch_active_token_ids(limit=args.n_markets)
+            except Exception as exc:
+                print(f"Failed to fetch markets: {exc}", file=sys.stderr)
+                return 1
+        if not token_ids:
+            print("No tokens; use --demo or --token-id", file=sys.stderr)
+            return 1
+
+        engine = LiveFeatureEngine()
+        books: dict[str, TopOfBook] = {}
+
+        def _on_feat(feat) -> None:
+            book = books.get(feat.token_id)
+            bid_depth = ask_depth = None
+            if book and book.best_bid is not None and book.best_ask is not None:
+                mid = feat.price
+                bid_depth = max(mid - book.best_bid, 1e-4) ** -1
+                ask_depth = max(book.best_ask - mid, 1e-4) ** -1
+            bar = TokenBar(
+                ts=feat.ts,
+                mid=feat.price,
+                volume=feat.size,
+                whale_ratio=feat.whale_ratio,
+                bid_depth=bid_depth,
+                ask_depth=ask_depth,
+                liquidity_usd=cfg.min_liquidity_usd,
+            )
+            trader.on_bar(
+                feat.token_id,
+                feat.condition_id,
+                bar,
+                strategies=strategies,
+            )
+
+        feed = MarketWebSocketFeed(token_ids, feature_engine=engine, on_features=_on_feat)
+        _orig = feed.handle_message
+
+        def _wrapped(raw: str | bytes):
+            text = raw.decode() if isinstance(raw, bytes) else str(raw)
+            if text.strip() and text.strip().upper() not in {"PONG", "PING"}:
+                try:
+                    payload = json.loads(text)
+                except json.JSONDecodeError:
+                    payload = None
+                if payload is not None:
+                    from polymarket_analytics.live_feed import parse_market_event
+
+                    for item in parse_market_event(payload):
+                        if isinstance(item, TopOfBook):
+                            books[item.token_id] = item
+            return _orig(raw)
+
+        feed.handle_message = _wrapped  # type: ignore[method-assign]
+        _render(f"live:{len(token_ids)} tokens")
+        end = time.time() + float(args.duration)
+        try:
+            async for _feat in feed.stream():
+                if trader.ticks_seen % max(1, args.refresh_every) == 0:
+                    _render(f"live ticks={trader.ticks_seen}")
+                if time.time() >= end:
+                    feed.stop()
+                    break
+        except KeyboardInterrupt:
+            feed.stop()
+        except Exception as exc:
+            trader.persist()
+            print(json.dumps({"ok": False, "error": str(exc), **trader.snapshot()}, indent=2))
+            return 1
         feed.stop()
         trader.persist()
         _render("stopped")
@@ -591,6 +742,54 @@ def build_parser() -> argparse.ArgumentParser:
     paper_p.add_argument("--demo-ticks", type=int, default=40)
     paper_p.add_argument("--demo-sleep", type=float, default=0.05)
     paper_p.set_defaults(func=_cmd_paper_trade)
+
+    swing_p = sub.add_parser(
+        "swing-trade",
+        help="Swing-trade probability moves (mean-reversion / momentum / book imbalance)",
+    )
+    swing_p.add_argument(
+        "--min-ev",
+        type=float,
+        default=0.08,
+        help="Min expected move to target in EV fraction (0.08→8pp) or pp",
+    )
+    swing_p.add_argument(
+        "--journal",
+        type=Path,
+        default=DEFAULT_SWING_JOURNAL,
+        help=f"Swing journal JSON (default: {DEFAULT_SWING_JOURNAL})",
+    )
+    swing_p.add_argument(
+        "--summary",
+        action="store_true",
+        help="Print swing journal summary and exit",
+    )
+    swing_p.add_argument("--bankroll", type=float, default=10_000.0)
+    swing_p.add_argument("--position-pct", type=float, default=0.05)
+    swing_p.add_argument("--take-profit-pct", type=float, default=0.20)
+    swing_p.add_argument("--stall-hours", type=float, default=48.0)
+    swing_p.add_argument("--atr-stop-mult", type=float, default=2.0)
+    swing_p.add_argument("--min-liquidity", type=float, default=50_000.0)
+    swing_p.add_argument(
+        "--strategy",
+        action="append",
+        choices=("mean_reversion", "momentum", "book_imbalance"),
+        default=None,
+        help="Restrict strategies; repeatable (default: all)",
+    )
+    swing_p.add_argument("--demo", action="store_true", help="Offline synthetic bars")
+    swing_p.add_argument("--demo-ticks", type=int, default=80)
+    swing_p.add_argument("--demo-sleep", type=float, default=0.02)
+    swing_p.add_argument(
+        "--duration",
+        type=float,
+        default=120.0,
+        help="Live feed seconds (default: %(default)s)",
+    )
+    swing_p.add_argument("--n-markets", type=int, default=20)
+    swing_p.add_argument("--token-id", action="append", default=None)
+    swing_p.add_argument("--refresh-every", type=int, default=1)
+    swing_p.set_defaults(func=_cmd_swing_trade)
 
     return parser
 
