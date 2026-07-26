@@ -1,0 +1,65 @@
+{
+  "updated_at": "2026-07-26T08:33:39.626418+00:00",
+  "bankroll_initial": 10000.0,
+  "cash": 9500.0,
+  "equity": 10054.371002132197,
+  "realized_pnl": 0.0,
+  "unrealized_pnl": 54.37100213219618,
+  "ticks_seen": 40,
+  "signals_fired": 1,
+  "fills": 1,
+  "n_strategies": 1,
+  "strategies": [
+    {
+      "label": "bucket=0.30-0.40 AND whale>3 AND mom1h=pos AND side=BUY",
+      "oos_ev_pct": 15.500068749999995,
+      "oos_win_rate": 0.5,
+      "params": {
+        "price_bucket": "0.30-0.40",
+        "min_volume_spike": null,
+        "min_whale_ratio": 3.0,
+        "require_price_volume_divergence": false,
+        "momentum_1h": "pos",
+        "momentum_6h": "any",
+        "max_time_to_resolution_hours": null,
+        "side": "BUY"
+      }
+    }
+  ],
+  "open_positions": [
+    {
+      "position_id": "27232961",
+      "token_id": "demo_token",
+      "condition_id": "demo_condition",
+      "strategy_label": "bucket=0.30-0.40 AND whale>3 AND mom1h=pos AND side=BUY",
+      "entry_ts": 1785053677.4846761,
+      "entry_price_raw": 0.33205128205128204,
+      "entry_price_fill": 0.3337115384615384,
+      "shares": 1498.3000057626925,
+      "notional": 500.0,
+      "fees": 0.0,
+      "mark_price": 0.36999999999999994,
+      "status": "open",
+      "exit_ts": null,
+      "exit_price": null,
+      "realized_pnl": null,
+      "win": null,
+      "unrealized_pnl": 54.37100213219618
+    }
+  ],
+  "closed_positions": [],
+  "recent_signals": [
+    {
+      "ts": 1785053677.4846761,
+      "token_id": "demo_token",
+      "condition_id": "demo_condition",
+      "price": 0.33205128205128204,
+      "whale_ratio": 3.625,
+      "momentum_1h": 0.023626373626373612,
+      "price_bucket": "0.30-0.40",
+      "strategy_label": "bucket=0.30-0.40 AND whale>3 AND mom1h=pos AND side=BUY",
+      "oos_ev_pct": 15.500068749999995,
+      "oos_win_rate": 0.5
+    }
+  ]
+}

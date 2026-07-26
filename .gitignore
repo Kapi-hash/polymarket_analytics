@@ -1,0 +1,14 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+data/parquet/
+data/cache/
+data/warehouse.duckdb
+data/warehouse.duckdb.wal
+data/raw/trades/*
+data/raw/markets/*
+!data/raw/trades/.gitkeep
+!data/raw/markets/.gitkeep
+.DS_Store

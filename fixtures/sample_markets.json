@@ -1,0 +1,44 @@
+[
+  {
+    "conditionId": "0xcond_yes_wins",
+    "question": "Will Yes win? (resolved Yes)",
+    "slug": "yes-wins-sample",
+    "token_yes": "1111111111111111111111111111111111111111111111111111111111111111",
+    "token_no": "2222222222222222222222222222222222222222222222222222222222222222",
+    "winning_outcome": "Yes",
+    "resolved": true,
+    "resolved_at": "2023-11-20T00:00:00Z",
+    "closed_at": "2023-11-20T00:00:00Z",
+    "endDate": "2023-11-20T00:00:00Z",
+    "volume": 100000.0,
+    "liquidity": 5000.0,
+    "negRisk": false
+  },
+  {
+    "conditionId": "0xcond_no_wins",
+    "question": "Will Yes win? (resolved No)",
+    "slug": "no-wins-sample",
+    "token_yes": "3333333333333333333333333333333333333333333333333333333333333333",
+    "token_no": "4444444444444444444444444444444444444444444444444444444444444444",
+    "winning_outcome": "No",
+    "resolved": true,
+    "resolved_at": "2023-11-21T00:00:00Z",
+    "closed_at": "2023-11-21T00:00:00Z",
+    "endDate": "2023-11-21T00:00:00Z",
+    "volume": 80000.0,
+    "liquidity": 4000.0,
+    "negRisk": false
+  },
+  {
+    "conditionId": "0xcond_open",
+    "question": "Open market sample",
+    "slug": "open-sample",
+    "token_yes": "5555555555555555555555555555555555555555555555555555555555555555",
+    "token_no": "6666666666666666666666666666666666666666666666666666666666666666",
+    "resolved": false,
+    "endDate": "2030-01-01T00:00:00Z",
+    "volume": 12000.0,
+    "liquidity": 1500.0,
+    "negRisk": false
+  }
+]

@@ -1,0 +1,62 @@
+# 24/7-ish paper trader on GitHub Actions ($0 on public repos).
+# Runs ~5h every 6h so sessions barely overlap; journal is committed back to main.
+name: Paper Trader
+
+on:
+  schedule:
+    # Every 6 hours (UTC)
+    - cron: "0 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: paper-trader
+  cancel-in-progress: false
+
+jobs:
+  paper-trade:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360 # allow full 5h session + checkout/commit overhead
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          # Full history not required; credentials needed to push journal updates
+          fetch-depth: 1
+          persist-credentials: true
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install -r requirements.txt
+
+      - name: Run paper trader (5 hours)
+        # Live WS feed; journal written to data/paper_trades.json
+        # Simulated fills only — never submits real orders.
+        run: |
+          mkdir -p data
+          set -o pipefail
+          python3 -m polymarket_analytics paper-trade \
+            --min-ev 0.10 \
+            --duration 18000 \
+            --journal data/paper_trades.json \
+            --oos-report data/oos_edge_report.json \
+            2>&1 | tee data/paper_trader.log
+        continue-on-error: true
+
+      - name: Commit and push journal
+        if: always()
+        env:
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          chmod +x scripts/gha_commit_paper_trades.sh
+          ./scripts/gha_commit_paper_trades.sh "$BRANCH"

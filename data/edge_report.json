@@ -1,0 +1,172 @@
+{
+  "top_edges": [
+    {
+      "label": "bucket=0.40-0.50 AND spike>3 AND mom1h=neg AND side=BUY",
+      "n": 242,
+      "empirical_win_rate": 0.6198347107438017,
+      "implied_win_rate": 0.4372190000000001,
+      "ev_pct": 18.26157107438016,
+      "price_bucket": "0.40-0.50",
+      "min_volume_spike": 3.0,
+      "momentum_1h": "neg",
+      "momentum_6h": "any",
+      "max_time_to_resolution_hours": null,
+      "side": "BUY"
+    },
+    {
+      "label": "bucket=0.40-0.50 AND spike>2 AND mom1h=neg AND side=BUY",
+      "n": 284,
+      "empirical_win_rate": 0.5915492957746479,
+      "implied_win_rate": 0.43858097887323955,
+      "ev_pct": 15.296831690140833,
+      "price_bucket": "0.40-0.50",
+      "min_volume_spike": 2.0,
+      "momentum_1h": "neg",
+      "momentum_6h": "any",
+      "max_time_to_resolution_hours": null,
+      "side": "BUY"
+    },
+    {
+      "label": "bucket=0.80-0.85 AND spike>2 AND mom1h=pos AND side=BUY",
+      "n": 130,
+      "empirical_win_rate": 0.9692307692307692,
+      "implied_win_rate": 0.8201769076923078,
+      "ev_pct": 14.905386153846145,
+      "price_bucket": "0.80-0.85",
+      "min_volume_spike": 2.0,
+      "momentum_1h": "pos",
+      "momentum_6h": "any",
+      "max_time_to_resolution_hours": null,
+      "side": "BUY"
+    },
+    {
+      "label": "bucket=0.80-0.85 AND spike>1.5 AND mom1h=pos AND side=BUY",
+      "n": 150,
+      "empirical_win_rate": 0.9666666666666667,
+      "implied_win_rate": 0.8204866533333334,
+      "ev_pct": 14.61800133333333,
+      "price_bucket": "0.80-0.85",
+      "min_volume_spike": 1.5,
+      "momentum_1h": "pos",
+      "momentum_6h": "any",
+      "max_time_to_resolution_hours": null,
+      "side": "BUY"
+    },
+    {
+      "label": "bucket=0.80-0.85 AND mom1h=pos AND side=BUY",
+      "n": 205,
+      "empirical_win_rate": 0.9609756097560975,
+      "implied_win_rate": 0.8198682536585365,
+      "ev_pct": 14.110735609756098,
+      "price_bucket": "0.80-0.85",
+      "min_volume_spike": null,
+      "momentum_1h": "pos",
+      "momentum_6h": "any",
+      "max_time_to_resolution_hours": null,
+      "side": "BUY"
+    },
+    {
+      "label": "bucket=0.70-0.80 AND mom1h=neg AND side=BUY",
+      "n": 445,
+      "empirical_win_rate": 0.8876404494382022,
+      "implied_win_rate": 0.7471143707865167,
+      "ev_pct": 14.052607865168554,
+      "price_bucket": "0.70-0.80",
+      "min_volume_spike": null,
+      "momentum_1h": "neg",
+      "momentum_6h": "any",
+      "max_time_to_resolution_hours": null,
+      "side": "BUY"
+    },
+    {
+      "label": "bucket=0.40-0.50 AND spike>1.5 AND mom1h=neg AND side=BUY",
+      "n": 307,
+      "empirical_win_rate": 0.5798045602605864,
+      "implied_win_rate": 0.440641687296417,
+      "ev_pct": 13.916287296416934,
+      "price_bucket": "0.40-0.50",
+      "min_volume_spike": 1.5,
+      "momentum_1h": "neg",
+      "momentum_6h": "any",
+      "max_time_to_resolution_hours": null,
+      "side": "BUY"
+    },
+    {
+      "label": "bucket=0.70-0.80 AND spike>1.5 AND mom1h=neg AND side=BUY",
+      "n": 367,
+      "empirical_win_rate": 0.8828337874659401,
+      "implied_win_rate": 0.7453975340599454,
+      "ev_pct": 13.743625340599475,
+      "price_bucket": "0.70-0.80",
+      "min_volume_spike": 1.5,
+      "momentum_1h": "neg",
+      "momentum_6h": "any",
+      "max_time_to_resolution_hours": null,
+      "side": "BUY"
+    },
+    {
+      "label": "bucket=0.80-0.85 AND spike>3 AND mom1h=pos AND side=BUY",
+      "n": 92,
+      "empirical_win_rate": 0.9565217391304348,
+      "implied_win_rate": 0.8203695434782609,
+      "ev_pct": 13.615219565217396,
+      "price_bucket": "0.80-0.85",
+      "min_volume_spike": 3.0,
+      "momentum_1h": "pos",
+      "momentum_6h": "any",
+      "max_time_to_resolution_hours": null,
+      "side": "BUY"
+    },
+    {
+      "label": "bucket=0.70-0.80 AND spike>2 AND mom1h=neg AND side=BUY",
+      "n": 331,
+      "empirical_win_rate": 0.8761329305135952,
+      "implied_win_rate": 0.7425102567975831,
+      "ev_pct": 13.362267371601211,
+      "price_bucket": "0.70-0.80",
+      "min_volume_spike": 2.0,
+      "momentum_1h": "neg",
+      "momentum_6h": "any",
+      "max_time_to_resolution_hours": null,
+      "side": "BUY"
+    }
+  ],
+  "backtests": [
+    {
+      "label": "bucket=0.40-0.50 AND spike>3 AND mom1h=neg AND side=BUY",
+      "n": 242,
+      "win_rate": 61.98,
+      "implied_win_rate": 43.72,
+      "ev_pct_points": 18.26,
+      "avg_pnl_per_share": 0.1826,
+      "expected_roi_pct": 41.77,
+      "total_pnl": 44.19,
+      "sharpe": 6.078,
+      "max_drawdown": 18.85
+    },
+    {
+      "label": "bucket=0.40-0.50 AND spike>2 AND mom1h=neg AND side=BUY",
+      "n": 284,
+      "win_rate": 59.15,
+      "implied_win_rate": 43.86,
+      "ev_pct_points": 15.3,
+      "avg_pnl_per_share": 0.153,
+      "expected_roi_pct": 34.88,
+      "total_pnl": 43.44,
+      "sharpe": 5.47,
+      "max_drawdown": 27.29
+    },
+    {
+      "label": "bucket=0.80-0.85 AND spike>2 AND mom1h=pos AND side=BUY",
+      "n": 130,
+      "win_rate": 96.92,
+      "implied_win_rate": 82.02,
+      "ev_pct_points": 14.91,
+      "avg_pnl_per_share": 0.1491,
+      "expected_roi_pct": 18.17,
+      "total_pnl": 19.38,
+      "sharpe": 9.772,
+      "max_drawdown": 1.3
+    }
+  ]
+}
