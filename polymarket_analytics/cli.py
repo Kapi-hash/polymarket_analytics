@@ -196,9 +196,15 @@ def _cmd_paper_trade(args: argparse.Namespace) -> int:
         kelly_fraction=args.kelly_fraction,
         max_position_pct=args.max_position_pct,
         fee_bps=args.fee_bps,
+        fee_category=args.fee_category,
+        fee_rate=args.fee_rate,
+        use_dynamic_fees=not args.flat_fees,
         spread_slippage_bps=args.spread_slippage_bps,
         min_oos_ev_pct=min_ev_pp,
         require_persists=not args.allow_decayed,
+        take_profit_pct=args.take_profit_pct,
+        stop_loss_pct=args.stop_loss_pct,
+        resolve_poll_sec=args.resolve_poll_sec,
     )
     trader = PaperTrader.from_oos_report(
         Path(args.oos_report),
@@ -253,7 +259,15 @@ def _cmd_paper_trade(args: argparse.Namespace) -> int:
             print("No token ids to subscribe; use --demo or --token-id", file=sys.stderr)
             return 1
 
-        feed = MarketWebSocketFeed(token_ids, feature_engine=engine)
+        feed = MarketWebSocketFeed(
+            token_ids,
+            feature_engine=engine,
+            on_resolution=lambda ev: trader.on_market_resolved(
+                condition_id=ev.condition_id,
+                winning_asset_id=ev.winning_asset_id,
+                exit_ts=ev.ts,
+            ),
+        )
         feed_status = f"live:{len(token_ids)} tokens"
         _render(feed_status)
         end = time.time() + float(args.duration)
@@ -487,7 +501,43 @@ def build_parser() -> argparse.ArgumentParser:
         default=0.05,
         help="Cap fraction of equity per fill (default: %(default)s)",
     )
-    paper_p.add_argument("--fee-bps", type=float, default=0.0)
+    paper_p.add_argument("--fee-bps", type=float, default=0.0,
+                        help="Legacy flat fee in bps (only with --flat-fees)")
+    paper_p.add_argument(
+        "--fee-category",
+        type=str,
+        default="crypto",
+        help="Polymarket fee category for dynamic curve (default: crypto → 0.07)",
+    )
+    paper_p.add_argument(
+        "--fee-rate",
+        type=float,
+        default=None,
+        help="Override dynamic feeRate constant (else category default)",
+    )
+    paper_p.add_argument(
+        "--flat-fees",
+        action="store_true",
+        help="Use legacy flat --fee-bps instead of dynamic C·feeRate·p·(1-p)",
+    )
+    paper_p.add_argument(
+        "--take-profit-pct",
+        type=float,
+        default=None,
+        help="Optional early exit when mark return ≥ this fraction of entry",
+    )
+    paper_p.add_argument(
+        "--stop-loss-pct",
+        type=float,
+        default=None,
+        help="Optional early exit when mark return ≤ -this fraction of entry",
+    )
+    paper_p.add_argument(
+        "--resolve-poll-sec",
+        type=float,
+        default=60.0,
+        help="Seconds between Gamma resolution polls (default: %(default)s)",
+    )
     paper_p.add_argument(
         "--spread-slippage-bps",
         type=float,

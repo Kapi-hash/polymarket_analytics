@@ -187,9 +187,19 @@ class LiveFeatureEngine:
         self._condition[book.token_id] = book.condition_id
 
 
-def parse_market_event(payload: Mapping[str, Any]) -> list[LiveTradeTick | TopOfBook]:
-    """Normalize a WS market payload into ticks / top-of-book updates."""
-    out: list[LiveTradeTick | TopOfBook] = []
+@dataclass(frozen=True)
+class MarketResolved:
+    condition_id: str
+    winning_asset_id: str | None
+    ts: float
+    event_type: str = "market_resolved"
+
+
+def parse_market_event(
+    payload: Mapping[str, Any],
+) -> list[LiveTradeTick | TopOfBook | MarketResolved]:
+    """Normalize a WS market payload into ticks / top-of-book / resolutions."""
+    out: list[LiveTradeTick | TopOfBook | MarketResolved] = []
     # Some frames are lists of events
     if isinstance(payload, list):
         for item in payload:
@@ -201,6 +211,25 @@ def parse_market_event(payload: Mapping[str, Any]) -> list[LiveTradeTick | TopOf
     asset_id = str(payload.get("asset_id") or "").strip()
     market = str(payload.get("market") or payload.get("condition_id") or "").strip()
     ts = _parse_ts_ms(payload.get("timestamp"))
+
+    if event_type in {"market_resolved", "resolved"}:
+        winning = (
+            payload.get("winning_asset_id")
+            or payload.get("winning_outcome_asset")
+            or payload.get("winner")
+        )
+        winning_id = str(winning).strip() if winning is not None else None
+        if not winning_id and asset_id:
+            # Some feeds emit the winning asset as asset_id
+            winning_id = asset_id
+        out.append(
+            MarketResolved(
+                condition_id=market,
+                winning_asset_id=winning_id or None,
+                ts=ts,
+            )
+        )
+        return out
 
     if event_type in {"last_trade_price", "last_trade", "trade"}:
         price = _finite(payload.get("price"))
@@ -230,7 +259,6 @@ def parse_market_event(payload: Mapping[str, Any]) -> list[LiveTradeTick | TopOf
             bid = None
             ask = None
             if isinstance(bids, list) and bids:
-                # CLOB books often sorted ascending; best bid = max price
                 prices = [_finite(x.get("price")) for x in bids if isinstance(x, Mapping)]
                 prices = [p for p in prices if p is not None]
                 bid = max(prices) if prices else None
@@ -315,6 +343,7 @@ class MarketWebSocketFeed:
         ping_interval_sec: float = PING_INTERVAL_SEC,
         feature_engine: LiveFeatureEngine | None = None,
         on_features: Callable[[LiveFeatures], None] | None = None,
+        on_resolution: Callable[[MarketResolved], None] | None = None,
     ) -> None:
         if not token_ids:
             raise ValueError("token_ids must be non-empty")
@@ -323,9 +352,11 @@ class MarketWebSocketFeed:
         self.ping_interval_sec = ping_interval_sec
         self.engine = feature_engine or LiveFeatureEngine()
         self.on_features = on_features
+        self.on_resolution = on_resolution
         self._stop = asyncio.Event()
         self.events_received = 0
         self.trades_received = 0
+        self.resolutions_received = 0
         self.last_error: str | None = None
 
     def stop(self) -> None:
@@ -369,6 +400,10 @@ class MarketWebSocketFeed:
             self.events_received += 1
             if isinstance(item, TopOfBook):
                 self.engine.on_book(item)
+            elif isinstance(item, MarketResolved):
+                self.resolutions_received += 1
+                if self.on_resolution is not None:
+                    self.on_resolution(item)
             elif isinstance(item, LiveTradeTick):
                 self.trades_received += 1
                 feat = self.engine.on_trade(item)
