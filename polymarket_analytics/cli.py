@@ -949,6 +949,12 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sweep_p.add_argument("--data-root", type=Path, default=ROOT / "data")
     sweep_p.add_argument("--out-dir", type=Path, default=ROOT / "data" / "research")
+    sweep_p.add_argument(
+        "--features",
+        type=Path,
+        default=None,
+        help="Optional features parquet (default: data/curated/trade_features_canonical.parquet)",
+    )
     sweep_p.add_argument("--train-end", type=str, default="2023-06-01T00:00:00+00:00")
     sweep_p.add_argument("--seed", type=int, default=42)
     sweep_p.set_defaults(func=_cmd_sweep_outcomes)
@@ -962,6 +968,34 @@ def build_parser() -> argparse.ArgumentParser:
     books_p.add_argument("--token-id", action="append", default=None)
     books_p.add_argument("--data-root", type=Path, default=ROOT / "data")
     books_p.set_defaults(func=_cmd_collect_books)
+
+    backfill_p = sub.add_parser("backfill-year", help="Resumable year-sharded Gamma/Data API backfill")
+    backfill_p.add_argument("--year", type=int, required=True)
+    backfill_p.add_argument("--out-dir", type=Path, required=True)
+    backfill_p.add_argument("--market-limit", type=int, default=None)
+    backfill_p.add_argument("--max-markets", type=int, default=None)
+    backfill_p.add_argument("--trade-limit-per-market", type=int, default=500)
+    backfill_p.add_argument("--tiny", action="store_true", help="Collect at most 5 markets and 50 trades each")
+    backfill_p.set_defaults(func=_cmd_backfill_year)
+
+    merge_p = sub.add_parser("merge-expanded", help="Merge annual backfills into canonical outcome lake")
+    merge_p.add_argument("--data-root", type=Path, default=ROOT / "data")
+    merge_p.add_argument("--year-dir", type=Path, action="append", required=True)
+    merge_p.add_argument("--existing-canonical", type=Path, default=None)
+    merge_p.add_argument("--out-dir", type=Path, required=True)
+    merge_p.set_defaults(func=_cmd_merge_expanded)
+
+    gate_p = sub.add_parser("outcome-gate", help="Evaluate outcome research evidence gate")
+    gate_p.add_argument("--features", type=Path, required=True)
+    gate_p.add_argument("--min-events", type=int, default=100)
+    gate_p.set_defaults(func=_cmd_outcome_gate)
+
+    report_p = sub.add_parser("overnight-report", help="Write morning report from research manifests")
+    report_p.add_argument("--root", type=Path, default=ROOT)
+    report_p.add_argument("--out", type=Path, required=True)
+    report_p.add_argument("--manifest", type=Path, action="append", default=[],
+                          help="JSON manifest; section is derived from its filename")
+    report_p.set_defaults(func=_cmd_overnight_report)
 
     return parser
 
@@ -998,7 +1032,11 @@ def _cmd_sweep_outcomes(args: argparse.Namespace) -> int:
 
     from polymarket_analytics.research.outcome_sweep import run_outcome_sweep
 
-    feats_path = Path(args.data_root) / "curated" / "trade_features_canonical.parquet"
+    feats_path = (
+        Path(args.features)
+        if getattr(args, "features", None)
+        else Path(args.data_root) / "curated" / "trade_features_canonical.parquet"
+    )
     if not feats_path.exists():
         print(json.dumps({"ok": False, "error": f"missing {feats_path}; run build-outcome-lake first"}))
         return 1
@@ -1075,6 +1113,47 @@ def _cmd_collect_books(args: argparse.Namespace) -> int:
         encoding="utf-8",
     )
     print(json.dumps({"ok": True, "tokens": token_ids[: args.n_tokens], **report, "health_path": str(health_path)}, indent=2, default=str))
+    return 0
+
+
+def _cmd_backfill_year(args: argparse.Namespace) -> int:
+    from polymarket_analytics.research.overnight_backfill import backfill_year
+
+    max_markets = 5 if args.tiny else args.max_markets
+    trade_limit = 50 if args.tiny else args.trade_limit_per_market
+    result = backfill_year(args.year, args.out_dir, market_limit=args.market_limit,
+                           max_markets=max_markets, trade_limit_per_market=trade_limit)
+    print(json.dumps({"ok": True, **result}, indent=2, default=str))
+    return 0
+
+
+def _cmd_merge_expanded(args: argparse.Namespace) -> int:
+    from polymarket_analytics.research.overnight_merge import merge_expanded_lake
+
+    result = merge_expanded_lake(args.data_root, args.year_dir, args.existing_canonical, args.out_dir)
+    print(json.dumps({"ok": True, **result}, indent=2, default=str))
+    return 0
+
+
+def _cmd_outcome_gate(args: argparse.Namespace) -> int:
+    from polymarket_analytics.research.overnight_gate import evaluate_outcome_gate
+
+    result = evaluate_outcome_gate(args.features, min_events=args.min_events)
+    print(json.dumps(result, indent=2, default=str))
+    return 0 if result["decision"] != "BLOCKED" else 1
+
+
+def _cmd_overnight_report(args: argparse.Namespace) -> int:
+    from polymarket_analytics.research.overnight_report import write_overnight_report
+
+    pieces: dict[str, object] = {}
+    for path in args.manifest:
+        try:
+            pieces[path.stem] = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            pieces[path.stem] = {"status": "unavailable", "error": str(exc), "path": str(path)}
+    report = write_overnight_report(args.root, args.out, pieces)
+    print(json.dumps({"ok": True, "report": str(report), "json": str(report.with_suffix(".json"))}, indent=2))
     return 0
 
 

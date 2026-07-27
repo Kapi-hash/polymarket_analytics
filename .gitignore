@@ -11,4 +11,10 @@ data/raw/trades/*
 data/raw/markets/*
 !data/raw/trades/.gitkeep
 !data/raw/markets/.gitkeep
-.DS_Store
+data/backfill/
+data/canonical_expanded/
+data/research_expanded/
+data/books/raw/
+data/books/normalized/
+*.tar.gz
+*.tar.zst

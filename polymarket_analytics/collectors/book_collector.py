@@ -130,6 +130,18 @@ async def _collect_ws(
     raw_path = out_raw / f"session_{int(time.time())}.jsonl"
     norm_rows: list[dict[str, Any]] = []
     prev_seq: int | None = None
+    flush_index = 0
+    flush_every = 500
+
+    def flush_normalized() -> None:
+        """Persist bounded chunks so a long collection does not retain all rows."""
+        nonlocal flush_index
+        if not norm_rows:
+            return
+        path = out_normalized / f"session_{int(time.time())}_{flush_index:05d}.parquet"
+        pl.DataFrame(norm_rows).write_parquet(path, compression="snappy")
+        norm_rows.clear()
+        flush_index += 1
 
     subscribe = {"assets_ids": token_ids, "type": "market"}
     deadline = time.time() + duration_sec
@@ -170,16 +182,14 @@ async def _collect_ws(
                                 norm_rows.append(book)
                             if trade:
                                 norm_rows.append({**trade, "record_type": "trade"})
+                            if len(norm_rows) >= flush_every:
+                                flush_normalized()
         except Exception:
             health.reconnects += 1
             health.connected = False
             await asyncio.sleep(1.0)
 
-    if norm_rows:
-        pl.DataFrame(norm_rows).write_parquet(
-            out_normalized / f"session_{int(time.time())}.parquet",
-            compression="snappy",
-        )
+    flush_normalized()
 
 
 def run_smoke_test(
