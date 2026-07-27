@@ -174,7 +174,8 @@ def order_tp_sl_tick(
 
 EXECUTION_GAPS: tuple[str, ...] = (
     "No L3 order-id queue reconstruction from available trade/book snapshots.",
-    "Latency is a fixed delay parameter — not measured exchange RTT.",
+    "Latency is recorded in FillResult.meta but does not delay quote selection or change fill price.",
     "Hybrid maker/taker path switching requires live cancel/replace semantics.",
     "Adverse markout needs future mid; only available when mid_after supplied.",
+    "No historical L2 depth in the local lake — book walk cannot be calibrated on real books.",
 )

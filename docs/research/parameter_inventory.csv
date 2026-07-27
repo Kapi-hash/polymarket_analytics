@@ -63,5 +63,8 @@ StrategyParams.require_price_volume_divergence,entry,backtest.py:StrategyParams,
 momentum_6h grid,entry,backtest.py:iter_grid_params,["any"],["any"],["any"; "pos"; "neg"],Partially wired,Axis declared but default grid freezes momentum_6h at any
 logit_half_tick,signal/feature,research/logit.py:DEFAULT_HALF_TICK,0.005,"Not defined",[0.001; 0.005; 0.01],Active,New foundation
 FEE_MODEL_VERSION,fee,research/fees.py:FEE_MODEL_VERSION,"2026-07-polymarket-v1","Not defined","Version pin only",Active,New foundation
-ExecutionConfig.latency_ms,execution,research/execution.py:ExecutionConfig,50.0,"Not defined",[0; 50; 100; 250; 500],Active,New; not yet wired into PaperTrader path
+ExecutionConfig.latency_ms,execution,research/execution.py:ExecutionConfig,50.0,"Not defined",[0; 50; 100; 250; 500],Partially wired,Present on PaperConfig and FillResult.meta; but does not delay quote selection or change fill price (inert until delayed-book model exists).
+PaperConfig.use_book_walk,execution,paper_trader.py:PaperConfig,false,"Not defined",[false; true],Partially wired,Opt-in L1 ask cross; CLI does not expose the flag; no historical L2
+PaperTrader.matches.min_volume_spike,entry,paper_trader.py:PaperTrader.matches,null,"Not defined",[null; 1.5; 2.0; 3.0],Declared but unused,If set; matches() always returns False — LiveFeatures lacks volume_spike
+PaperTrader.matches.max_time_to_resolution_hours,entry,paper_trader.py:PaperTrader.matches,null,"Not defined",[null; 24; 48; 72],Declared but unused,If set; matches() always returns False — LiveFeatures lacks TTR
 exogenous.*,exogenous,research/exogenous.py,null,"Not defined","Blocked until PIT providers exist",Declared but unused,Provider stubs only

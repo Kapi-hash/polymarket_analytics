@@ -1,0 +1,40 @@
+{
+  "mode": "restricted_midfill_fee_fallback",
+  "NOT_full_execution_realistic_sweep": true,
+  "git_commit": "c6a043f02a66c560986c33a6e78910ae68e0f114",
+  "data_fingerprint": "376ee60f6a525c7b",
+  "fee_model_version": "2026-07-polymarket-v1",
+  "fee_label": "FALLBACK \u2014 lake lacks fee_category; crypto schedule applied for sensitivity only",
+  "execution_label": "trade-print mid fill + 50bps slip; no L2 walk",
+  "train_end_exclusive": "2023-06-01T00:00:00+00:00",
+  "n_train_rows": 28998,
+  "n_test_rows_purged": 16920,
+  "n_events_train": 44,
+  "n_events_test_purged": 37,
+  "n_attempts": 378,
+  "n_candidates_min_n": 174,
+  "n_surviving_wf": 5,
+  "n_final_tested": 5,
+  "multiple_testing": {
+    "n_trials": 50,
+    "best_sharpe": 8.849057029807803,
+    "dsr": 1.0,
+    "pbo_proxy": 0.0,
+    "fdr_alpha": 0.05,
+    "n_discoveries_bh": 50,
+    "neighborhood_stability": null,
+    "notes": "Scaffolding only \u2014 not a claim of alpha"
+  },
+  "folds_spec": {
+    "n_folds": 3,
+    "train_days": 60,
+    "test_days": 21,
+    "embargo_days": 2
+  },
+  "blockers_remaining": [
+    "no_l2_books",
+    "no_fee_category_metadata",
+    "only_81_events_total",
+    "fee_schedule_not_historically_versioned"
+  ]
+}

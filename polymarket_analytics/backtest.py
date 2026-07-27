@@ -228,11 +228,23 @@ def _sharpe_ratio(returns: pl.Series) -> float:
     return float(mu / sigma * (returns.len() ** 0.5))
 
 
-def simulate_strategy(df: pl.DataFrame, params: StrategyParams) -> BacktestResult:
+def simulate_strategy(
+    df: pl.DataFrame,
+    params: StrategyParams,
+    *,
+    fee_category: str | None = None,
+    fee_role: Literal["taker", "maker"] = "taker",
+    spread_slippage_bps: float = 0.0,
+    fee_model: Any | None = None,
+) -> BacktestResult:
     """
     Buy 1 share at trade price; resolve to $1 if token_won else $0.
 
     Tracks chronological cumulative PnL, Sharpe on ROI, max drawdown, win rate.
+
+    When ``fee_category`` is set, subtracts per-fill FeeModel fees and optional
+    spread slippage from gross PnL. Fee categories absent from lake metadata
+    must be treated as conservative fallbacks and labeled separately.
     """
     filtered = apply_strategy_filter(df, params)
     edge = compute_edge_stats(filtered, params)
@@ -252,13 +264,66 @@ def simulate_strategy(df: pl.DataFrame, params: StrategyParams) -> BacktestResul
             equity_curve=[],
         )
 
-    ordered = filtered.sort("traded_at").with_columns(
-        (pl.col("token_won").cast(pl.Float64) - pl.col("price")).alias("pnl"),
-        (
-            (pl.col("token_won").cast(pl.Float64) - pl.col("price"))
-            / pl.col("price").clip(lower_bound=1e-12)
-        ).alias("roi"),
-    )
+    ordered = filtered.sort("traded_at")
+    if fee_category is not None or spread_slippage_bps:
+        from polymarket_analytics.research.fees import FeeModel, compute_fill_fee
+
+        fm = fee_model or FeeModel()
+        slip = max(float(spread_slippage_bps), 0.0) / 10_000.0
+        fees: list[float] = []
+        fill_px: list[float] = []
+        for row in ordered.select(["price", "traded_at"]).iter_rows(named=True):
+            px = float(row["price"]) * (1.0 + slip)
+            px = min(max(px, 0.01), 0.99)
+            fill_px.append(px)
+            if fee_category is None:
+                fees.append(0.0)
+            else:
+                info = compute_fill_fee(
+                    1.0,
+                    px,
+                    role=fee_role,
+                    category=fee_category,
+                    as_of=row["traded_at"],
+                    model=fm,
+                )
+                fees.append(float(info["fee"]))
+        ordered = ordered.with_columns(
+            pl.Series("fill_price", fill_px),
+            pl.Series("fee", fees),
+        ).with_columns(
+            (
+                pl.col("token_won").cast(pl.Float64)
+                - pl.col("fill_price")
+                - pl.col("fee")
+            ).alias("pnl"),
+            (
+                (
+                    pl.col("token_won").cast(pl.Float64)
+                    - pl.col("fill_price")
+                    - pl.col("fee")
+                )
+                / pl.col("fill_price").clip(lower_bound=1e-12)
+            ).alias("roi"),
+        )
+        # Net EV% uses fee-aware fill prices
+        net_ev = 100.0 * float(ordered["pnl"].mean())
+        edge = EdgeStats(
+            n=edge.n,
+            empirical_win_rate=edge.empirical_win_rate,
+            implied_win_rate=float(ordered["fill_price"].mean()),
+            ev_pct=net_ev,
+            params=asdict(params),
+            label=params.label(),
+        )
+    else:
+        ordered = ordered.with_columns(
+            (pl.col("token_won").cast(pl.Float64) - pl.col("price")).alias("pnl"),
+            (
+                (pl.col("token_won").cast(pl.Float64) - pl.col("price"))
+                / pl.col("price").clip(lower_bound=1e-12)
+            ).alias("roi"),
+        )
 
     pnls = ordered["pnl"]
     equity = pnls.cum_sum().to_list()

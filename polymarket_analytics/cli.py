@@ -929,7 +929,153 @@ def build_parser() -> argparse.ArgumentParser:
     swing_p.add_argument("--refresh-every", type=int, default=1)
     swing_p.set_defaults(func=_cmd_swing_trade)
 
+    # --- Outcome research / L2 collection ---
+    audit_p = sub.add_parser("audit-data", help="Audit duplicate trades and lake coverage")
+    audit_p.add_argument("--data-root", type=Path, default=ROOT / "data")
+    audit_p.add_argument("--source", choices=("lake", "hf_sample", "merged"), default="hf_sample")
+    audit_p.set_defaults(func=_cmd_audit_data)
+
+    lake_p = sub.add_parser(
+        "build-outcome-lake",
+        help="Build canonical deduped trades + features for outcome research",
+    )
+    lake_p.add_argument("--data-root", type=Path, default=ROOT / "data")
+    lake_p.add_argument("--source", choices=("lake", "hf_sample", "merged"), default="hf_sample")
+    lake_p.set_defaults(func=_cmd_build_outcome_lake)
+
+    sweep_p = sub.add_parser(
+        "sweep-outcomes",
+        help="Purged walk-forward outcome strategy sweep (no microstructure claims)",
+    )
+    sweep_p.add_argument("--data-root", type=Path, default=ROOT / "data")
+    sweep_p.add_argument("--out-dir", type=Path, default=ROOT / "data" / "research")
+    sweep_p.add_argument("--train-end", type=str, default="2023-06-01T00:00:00+00:00")
+    sweep_p.add_argument("--seed", type=int, default=42)
+    sweep_p.set_defaults(func=_cmd_sweep_outcomes)
+
+    books_p = sub.add_parser(
+        "collect-books",
+        help="Prospective L2 book collector smoke test / continuous capture",
+    )
+    books_p.add_argument("--duration", type=float, default=30.0, help="Seconds to collect")
+    books_p.add_argument("--n-tokens", type=int, default=3)
+    books_p.add_argument("--token-id", action="append", default=None)
+    books_p.add_argument("--data-root", type=Path, default=ROOT / "data")
+    books_p.set_defaults(func=_cmd_collect_books)
+
     return parser
+
+
+def _cmd_audit_data(args: argparse.Namespace) -> int:
+    from polymarket_analytics.research.canonical_lake import load_source_trades
+    from polymarket_analytics.research.duplicates import (
+        audit_duplicate_trades,
+        write_duplicate_audit_parquet,
+        write_duplicate_detail_parquet,
+    )
+
+    data_root = Path(args.data_root)
+    raw = load_source_trades(data_root, source=args.source)
+    audit = audit_duplicate_trades(raw)
+    quality = data_root / "quality"
+    quality.mkdir(parents=True, exist_ok=True)
+    write_duplicate_audit_parquet(audit, quality / "duplicate_trade_audit.parquet")
+    write_duplicate_detail_parquet(raw, quality / "duplicate_trade_detail.parquet")
+    print(json.dumps({"ok": True, "source": args.source, "audit": audit}, indent=2, default=str))
+    return 0
+
+
+def _cmd_build_outcome_lake(args: argparse.Namespace) -> int:
+    from polymarket_analytics.research.canonical_lake import build_canonical_lake
+
+    stats = build_canonical_lake(Path(args.data_root), source=args.source)
+    print(json.dumps({"ok": True, **stats}, indent=2, default=str))
+    return 0
+
+
+def _cmd_sweep_outcomes(args: argparse.Namespace) -> int:
+    import polars as pl
+
+    from polymarket_analytics.research.outcome_sweep import run_outcome_sweep
+
+    feats_path = Path(args.data_root) / "curated" / "trade_features_canonical.parquet"
+    if not feats_path.exists():
+        print(json.dumps({"ok": False, "error": f"missing {feats_path}; run build-outcome-lake first"}))
+        return 1
+    features = pl.read_parquet(feats_path)
+    result = run_outcome_sweep(
+        features,
+        train_end_exclusive=args.train_end,
+        out_dir=Path(args.out_dir),
+        seed=args.seed,
+    )
+    print(json.dumps({"ok": result.get("status") == "ok", **result}, indent=2, default=str))
+    return 0 if result.get("status") == "ok" else 1
+
+
+def _cmd_collect_books(args: argparse.Namespace) -> int:
+    from polymarket_analytics.collectors.book_collector import run_smoke_test
+
+    token_ids = args.token_id
+    if not token_ids:
+        try:
+            import json as _json
+            from urllib.request import Request, urlopen
+
+            req = Request(
+                "https://gamma-api.polymarket.com/markets?active=true&closed=false&limit=10",
+                headers={"User-Agent": "polymarket-analytics-research/0.7"},
+            )
+            with urlopen(req, timeout=20) as resp:
+                markets = _json.loads(resp.read().decode())
+            token_ids = []
+            for m in markets:
+                raw = m.get("clobTokenIds") or m.get("clob_token_ids")
+                if isinstance(raw, str):
+                    try:
+                        raw = _json.loads(raw)
+                    except Exception:
+                        raw = None
+                if isinstance(raw, list) and raw:
+                    token_ids.append(str(raw[0]))
+                if len(token_ids) >= args.n_tokens:
+                    break
+            if not token_ids:
+                # Fallback: CLOB markets listing
+                req2 = Request(
+                    "https://clob.polymarket.com/markets?limit=20",
+                    headers={"User-Agent": "polymarket-analytics-research/0.7"},
+                )
+                with urlopen(req2, timeout=20) as resp:
+                    payload = _json.loads(resp.read().decode())
+                for m in payload.get("data") or []:
+                    tid = m.get("tokens") or m.get("clob_token_ids")
+                    if isinstance(tid, list) and tid:
+                        tok = tid[0]
+                        token_ids.append(str(tok.get("token_id") if isinstance(tok, dict) else tok))
+                    if len(token_ids) >= args.n_tokens:
+                        break
+        except Exception as exc:  # noqa: BLE001
+            print(json.dumps({"ok": False, "error": f"token discovery failed: {exc}"}))
+            return 1
+    if not token_ids:
+        print(json.dumps({"ok": False, "error": "no token ids"}))
+        return 1
+
+    report = run_smoke_test(
+        token_ids=token_ids[: args.n_tokens],
+        duration_sec=args.duration,
+        max_tokens=args.n_tokens,
+        data_root=Path(args.data_root),
+    )
+    health_path = Path(args.data_root) / "books" / "collector_health.json"
+    health_path.parent.mkdir(parents=True, exist_ok=True)
+    health_path.write_text(
+        json.dumps({"ok": True, "tokens": token_ids[: args.n_tokens], **report}, indent=2, default=str),
+        encoding="utf-8",
+    )
+    print(json.dumps({"ok": True, "tokens": token_ids[: args.n_tokens], **report, "health_path": str(health_path)}, indent=2, default=str))
+    return 0
 
 
 def main(argv: list[str] | None = None) -> int:

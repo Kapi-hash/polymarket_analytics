@@ -1,0 +1,4 @@
+reason,markets_affected,strategies_blocked
+no_historical_l2_depth,all,"book_walk,queue_ahead,ofi,maker_realism"
+no_fee_category_tag,all lake condition_ids,definitive_net_of_fee_ranking
+event_overlap_purged_from_final_test,23,""
