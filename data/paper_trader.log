@@ -1,0 +1,88 @@
+================================================================================================
+ MULTI-PROFILE FORWARD TEST LEADERBOARD
+================================================================================================
+     profile |       PnL($) |         ROI% |         Win% |        fills |      fees($) |       maxDD% |       equity
+------------ | ------------ | ------------ | ------------ | ------------ | ------------ | ------------ | ------------
+profile_rsi_ |        +2.00 |        +0.02 |        100.0 |            2 |       0.0000 |         0.00 |     10002.00
+profile_swin |        +2.00 |        +0.02 |        100.0 |            2 |       0.0000 |         0.00 |     10002.00
+profile_mome |        +0.00 |        +0.00 |          0.0 |            0 |       0.0000 |         0.00 |     10000.00
+profile_whal |       -21.11 |        -0.21 |          0.0 |            2 |      18.4694 |         0.22 |      9978.89
+================================================================================================
+{
+  "ok": true,
+  "mode": "multi-live",
+  "profiles": [
+    {
+      "profile": "profile_whale_midbucket",
+      "description": "Whale Ratio > 3 on 0.40\u20130.50, min EV +10pp",
+      "kind": "paper",
+      "journal": "data/paper_trades_whale.json",
+      "realized_pnl": 0.0,
+      "unrealized_pnl": -21.1054327616836,
+      "total_pnl": -21.1054327616836,
+      "roi_pct": -0.21105432761683596,
+      "win_rate_pct": 0.0,
+      "fills": 2,
+      "n_closed": 0,
+      "fees_paid": 18.469356,
+      "max_drawdown_pct": 0.21595231728688305,
+      "equity": 9978.894567238316,
+      "bankroll": 10000.0,
+      "cash": 9451.679214901587
+    },
+    {
+      "profile": "profile_rsi_mean_reversion",
+      "description": "RSI < 25 on >$50k liq \u2192 20-EMA target",
+      "kind": "swing",
+      "journal": "data/paper_trades_rsi.json",
+      "realized_pnl": 1.00401606425703,
+      "unrealized_pnl": 0.9981041932199867,
+      "total_pnl": 2.0021202574770167,
+      "roi_pct": 0.020021202574770167,
+      "win_rate_pct": 100.0,
+      "fills": 2,
+      "n_closed": 1,
+      "fees_paid": 0.0,
+      "max_drawdown_pct": 0.0,
+      "equity": 10002.002120257477,
+      "bankroll": 10000.0,
+      "cash": 9500.953815261044
+    },
+    {
+      "profile": "profile_momentum_drift",
+      "description": "Hurst > 0.55 + 5/20 EMA cross on heavy volume",
+      "kind": "swing",
+      "journal": "data/paper_trades_momentum.json",
+      "realized_pnl": 0.0,
+      "unrealized_pnl": 0,
+      "total_pnl": 0.0,
+      "roi_pct": 0.0,
+      "win_rate_pct": 0.0,
+      "fills": 0,
+      "n_closed": 0,
+      "fees_paid": 0.0,
+      "max_drawdown_pct": 0.0,
+      "equity": 10000.0,
+      "bankroll": 10000.0,
+      "cash": 10000.0
+    },
+    {
+      "profile": "profile_swing_confluence",
+      "description": "2+ of book imbalance / EMA cross / RSI oversold",
+      "kind": "swing",
+      "journal": "data/paper_trades_swing.json",
+      "realized_pnl": 1.00401606425703,
+      "unrealized_pnl": 0.9981041932199867,
+      "total_pnl": 2.0021202574770167,
+      "roi_pct": 0.020021202574770167,
+      "win_rate_pct": 100.0,
+      "fills": 2,
+      "n_closed": 1,
+      "fees_paid": 0.0,
+      "max_drawdown_pct": 0.0,
+      "equity": 10002.002120257477,
+      "bankroll": 10000.0,
+      "cash": 9500.953815261044
+    }
+  ]
+}

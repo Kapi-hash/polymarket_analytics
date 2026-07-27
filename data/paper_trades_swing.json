@@ -1,0 +1,141 @@
+{
+  "updated_at": "2026-07-27T04:51:59.944180+00:00",
+  "bankroll_initial": 10000.0,
+  "cash": 9500.953815261044,
+  "equity": 10002.002120257477,
+  "realized_pnl": 1.00401606425703,
+  "unrealized_pnl": 0.9981041932199867,
+  "ticks_seen": 302,
+  "signals_fired": 2,
+  "fills": 2,
+  "min_ev_pct": 5.0,
+  "config": {
+    "bankroll": 10000.0,
+    "position_pct": 0.05,
+    "min_liquidity_usd": 25000.0,
+    "min_ev_pct": 5.0,
+    "rsi_period": 14,
+    "rsi_oversold": 30.0,
+    "bb_period": 20,
+    "bb_std": 2.5,
+    "hurst_min": 0.55,
+    "ema_fast": 5,
+    "ema_slow": 20,
+    "momentum_min_move": 0.1,
+    "whale_volume_ratio": 2.0,
+    "book_imbalance_min": 2.5,
+    "book_price_lo": 0.2,
+    "book_price_hi": 0.8,
+    "take_profit_pct": 0.2,
+    "take_profit_atr_mult": 2.0,
+    "stop_loss_pct": 0.1,
+    "stop_loss_atr_mult": 1.0,
+    "atr_period": 14,
+    "atr_stop_mult": 2.0,
+    "stall_hours": 36.0,
+    "use_bb_take_profit": true,
+    "max_open_positions": 15,
+    "cooldown_sec": 120.0,
+    "history_len": 200,
+    "require_confluence": true,
+    "min_confluence": 2,
+    "confluence_rsi": 30.0,
+    "confluence_volume_usd": 25000.0,
+    "confluence_book_min": 2.5
+  },
+  "open_positions": [
+    {
+      "position_id": "91f8a075",
+      "strategy": "confluence",
+      "token_id": "91863162118308663069733924043159186005106558783397508844234610341221325526200",
+      "condition_id": "0xbb57ccf5853a85487bc3d83d04d669310d28c6c810758953b9d9b91d1aee89d2",
+      "entry_ts": 1785123857.944,
+      "entry_price": 0.501,
+      "shares": 998.1041932199857,
+      "notional": 500.0502008032129,
+      "target_price": 0.6012,
+      "stop_price": 0.4509,
+      "trailing_stop": 0.5017142857142857,
+      "mark_price": 0.502,
+      "status": "open",
+      "exit_ts": null,
+      "exit_price": null,
+      "exit_reason": null,
+      "realized_pnl": null,
+      "reason": "confluence[2]: bid/ask=10.00x; rsi=0.0<30",
+      "unrealized_pnl": 0.9981041932199867,
+      "return_pct": 0.0019960079840319377
+    }
+  ],
+  "closed_positions": [
+    {
+      "position_id": "c7ac3956",
+      "strategy": "confluence",
+      "token_id": "105267568073659068217311993901927962476298440625043565106676088842803600775810",
+      "condition_id": "0xbb57ccf5853a85487bc3d83d04d669310d28c6c810758953b9d9b91d1aee89d2",
+      "entry_ts": 1785119086.96,
+      "entry_price": 0.498,
+      "shares": 1004.0160642570281,
+      "notional": 500.0,
+      "target_price": 0.5976,
+      "stop_price": 0.4482,
+      "trailing_stop": 0.499,
+      "mark_price": 0.499,
+      "status": "stop_loss",
+      "exit_ts": 1785121638.248,
+      "exit_price": 0.499,
+      "exit_reason": "stop_loss",
+      "realized_pnl": 1.00401606425703,
+      "reason": "confluence[2]: bid/ask=10.00x; rsi=0.0<30",
+      "unrealized_pnl": 0.0,
+      "return_pct": 0.002008032128514058
+    }
+  ],
+  "recent_signals": [
+    {
+      "strategy": "confluence",
+      "token_id": "105267568073659068217311993901927962476298440625043565106676088842803600775810",
+      "condition_id": "0xbb57ccf5853a85487bc3d83d04d669310d28c6c810758953b9d9b91d1aee89d2",
+      "ts": 1785119086.96,
+      "entry_price": 0.498,
+      "target_price": 0.5976,
+      "stop_price": 0.4482,
+      "reason": "confluence[2]: bid/ask=10.00x; rsi=0.0<30",
+      "indicators": {
+        "n_legs": 2,
+        "legs": [
+          "signal_liquidity",
+          "signal_rsi"
+        ],
+        "rsi": 0.0,
+        "ema_fast": 0.4986662381283265,
+        "ema_slow": 0.49883775227400107,
+        "atr": 7.142857142857149e-05
+      }
+    },
+    {
+      "strategy": "confluence",
+      "token_id": "91863162118308663069733924043159186005106558783397508844234610341221325526200",
+      "condition_id": "0xbb57ccf5853a85487bc3d83d04d669310d28c6c810758953b9d9b91d1aee89d2",
+      "ts": 1785123857.944,
+      "entry_price": 0.501,
+      "target_price": 0.6012,
+      "stop_price": 0.4509,
+      "reason": "confluence[2]: bid/ask=10.00x; rsi=0.0<30",
+      "indicators": {
+        "n_legs": 2,
+        "legs": [
+          "signal_liquidity",
+          "signal_rsi"
+        ],
+        "rsi": 0.0,
+        "ema_fast": 0.5016666666666667,
+        "ema_slow": null,
+        "atr": 7.142857142857149e-05
+      }
+    }
+  ],
+  "profile": "profile_swing_confluence",
+  "max_drawdown_pct": 0.0,
+  "peak_equity": 10002.002120257477
+}
