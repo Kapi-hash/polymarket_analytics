@@ -1,0 +1,646 @@
+# Overnight Polymarket research on GitHub-hosted runners (single dispatch).
+# Simulated research only — never places orders or uses wallets.
+name: Overnight Polymarket Research
+
+"on":
+  workflow_dispatch:
+    inputs:
+      run_backfill:
+        description: Run 2024–2026 historical backfills
+        type: boolean
+        default: true
+      run_outcome_sweep:
+        description: Run outcome sweep if quality gate passes
+        type: boolean
+        default: true
+      run_l2_collection:
+        description: Collect prospective L2 books
+        type: boolean
+        default: true
+      l2_duration_seconds:
+        description: L2 collection duration (seconds); keep ≤18000 for 6h job limit
+        type: string
+        default: "18000"
+      l2_token_limit:
+        description: Max tokens in L2 universe
+        type: string
+        default: "100"
+      artifact_retention_days:
+        description: Artifact retention days
+        type: string
+        default: "14"
+      backfill_max_markets:
+        description: Optional per-year market cap (empty = uncapped within job timeout)
+        type: string
+        default: "400"
+      train_end:
+        description: Frozen train end (ISO) for expanded sweep
+        type: string
+        default: "2025-01-01T00:00:00+00:00"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: overnight-polymarket-research
+  cancel-in-progress: false
+
+env:
+  PYTHONUNBUFFERED: "1"
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+
+jobs:
+  preflight:
+    name: Preflight
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    outputs:
+      retention: ${{ steps.meta.outputs.retention }}
+      run_backfill: ${{ github.event.inputs.run_backfill }}
+      run_sweep: ${{ github.event.inputs.run_outcome_sweep }}
+      run_l2: ${{ github.event.inputs.run_l2_collection }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install -r requirements.txt
+
+      - name: Record environment
+        id: meta
+        run: |
+          mkdir -p artifacts/preflight
+          {
+            echo "git_sha=$(git rev-parse HEAD)"
+            echo "python=$(python3 --version)"
+            echo "req_sha=$(python3 -c 'import hashlib,pathlib; print(hashlib.sha256(pathlib.Path(\"requirements.txt\").read_bytes()).hexdigest())')"
+            echo "runner_os=$RUNNER_OS"
+            echo "retention=${{ github.event.inputs.artifact_retention_days }}"
+          } | tee artifacts/preflight/environment.txt
+          echo "retention=${{ github.event.inputs.artifact_retention_days }}" >> "$GITHUB_OUTPUT"
+          python3 - <<'PY'
+          import json, hashlib, pathlib, sys, platform
+          from datetime import datetime, timezone
+          req = pathlib.Path("requirements.txt").read_bytes()
+          man = {
+            "git_sha": pathlib.Path(".git/HEAD").read_text().strip() if False else __import__("subprocess").check_output(["git","rev-parse","HEAD"], text=True).strip(),
+            "python": sys.version.split()[0],
+            "platform": platform.platform(),
+            "requirements_sha256": hashlib.sha256(req).hexdigest(),
+            "generated_at": datetime.now(timezone.utc).isoformat(),
+            "inputs": {
+              "run_backfill": "${{ github.event.inputs.run_backfill }}",
+              "run_outcome_sweep": "${{ github.event.inputs.run_outcome_sweep }}",
+              "run_l2_collection": "${{ github.event.inputs.run_l2_collection }}",
+              "l2_duration_seconds": "${{ github.event.inputs.l2_duration_seconds }}",
+              "l2_token_limit": "${{ github.event.inputs.l2_token_limit }}",
+              "backfill_max_markets": "${{ github.event.inputs.backfill_max_markets }}",
+              "train_end": "${{ github.event.inputs.train_end }}",
+            },
+          }
+          pathlib.Path("artifacts/preflight/manifest.json").write_text(json.dumps(man, indent=2))
+          print(json.dumps(man, indent=2))
+          PY
+
+      - name: Full test suite
+        run: python3 -m pytest tests/ -q --tb=line
+
+      - name: Validate CLI
+        run: |
+          python3 -m polymarket_analytics --help
+          python3 -c "from polymarket_analytics.research import overnight_backfill, overnight_merge, overnight_gate, overnight_report"
+          python3 -c "from polymarket_analytics.collectors.book_collector import run_smoke_test"
+
+      - name: Guard tracked user journal
+        run: |
+          if git ls-files --error-unmatch data/swing_trades.json >/dev/null 2>&1; then
+            echo "data/swing_trades.json unexpectedly tracked" >&2
+            exit 1
+          fi
+          echo "swing_trades.json not tracked (OK)"
+
+      - name: Upload preflight artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: overnight-preflight
+          path: artifacts/preflight/
+          retention-days: ${{ steps.meta.outputs.retention }}
+          if-no-files-found: warn
+
+  backfill-2024:
+    name: Backfill 2024
+    needs: preflight
+    if: needs.preflight.result == 'success' && github.event.inputs.run_backfill == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: python3 -m pip install -r requirements.txt
+      - name: Backfill year 2024
+        run: |
+          set -o pipefail
+          MAX="${{ github.event.inputs.backfill_max_markets }}"
+          ARGS=(--year 2024 --out-dir data/backfill/2024 --trade-limit-per-market 400)
+          if [ -n "$MAX" ]; then ARGS+=(--max-markets "$MAX"); fi
+          python3 -m polymarket_analytics backfill-year "${ARGS[@]}" 2>&1 | tee data/backfill/2024/job.log
+        continue-on-error: true
+      - name: Package year artifact
+        if: always()
+        run: |
+          mkdir -p dist
+          python3 - <<'PY'
+          import hashlib, json, tarfile
+          from pathlib import Path
+          src = Path("data/backfill/2024")
+          src.mkdir(parents=True, exist_ok=True)
+          out = Path("dist/polymarket-backfill-2024.tar.zst")
+          # Prefer zstd if available via tar; else gzip
+          mode = "w:gz"
+          out = Path("dist/polymarket-backfill-2024.tar.gz")
+          with tarfile.open(out, mode) as tar:
+              if src.exists():
+                  tar.add(src, arcname="2024")
+          h = hashlib.sha256(out.read_bytes()).hexdigest()
+          Path("dist/polymarket-backfill-2024.sha256").write_text(f"{h}  {out.name}\n")
+          man = {"year": 2024, "archive": out.name, "sha256": h, "bytes": out.stat().st_size}
+          Path("dist/manifest.json").write_text(json.dumps(man, indent=2))
+          print(json.dumps(man, indent=2))
+          PY
+      - name: Upload 2024 backfill
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: polymarket-backfill-2024
+          path: dist/
+          retention-days: ${{ needs.preflight.outputs.retention }}
+          if-no-files-found: warn
+
+  backfill-2025:
+    name: Backfill 2025
+    needs: preflight
+    if: needs.preflight.result == 'success' && github.event.inputs.run_backfill == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: python3 -m pip install -r requirements.txt
+      - name: Backfill year 2025
+        run: |
+          set -o pipefail
+          MAX="${{ github.event.inputs.backfill_max_markets }}"
+          ARGS=(--year 2025 --out-dir data/backfill/2025 --trade-limit-per-market 400)
+          if [ -n "$MAX" ]; then ARGS+=(--max-markets "$MAX"); fi
+          python3 -m polymarket_analytics backfill-year "${ARGS[@]}" 2>&1 | tee data/backfill/2025/job.log
+        continue-on-error: true
+      - name: Package year artifact
+        if: always()
+        run: |
+          mkdir -p dist
+          python3 - <<'PY'
+          import hashlib, json, tarfile
+          from pathlib import Path
+          src = Path("data/backfill/2025")
+          src.mkdir(parents=True, exist_ok=True)
+          out = Path("dist/polymarket-backfill-2025.tar.gz")
+          with tarfile.open(out, "w:gz") as tar:
+              if src.exists():
+                  tar.add(src, arcname="2025")
+          h = hashlib.sha256(out.read_bytes()).hexdigest()
+          Path("dist/polymarket-backfill-2025.sha256").write_text(f"{h}  {out.name}\n")
+          Path("dist/manifest.json").write_text(json.dumps({"year": 2025, "archive": out.name, "sha256": h, "bytes": out.stat().st_size}, indent=2))
+          PY
+      - name: Upload 2025 backfill
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: polymarket-backfill-2025
+          path: dist/
+          retention-days: ${{ needs.preflight.outputs.retention }}
+          if-no-files-found: warn
+
+  backfill-2026:
+    name: Backfill 2026
+    needs: preflight
+    if: needs.preflight.result == 'success' && github.event.inputs.run_backfill == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: python3 -m pip install -r requirements.txt
+      - name: Backfill year 2026
+        run: |
+          set -o pipefail
+          MAX="${{ github.event.inputs.backfill_max_markets }}"
+          ARGS=(--year 2026 --out-dir data/backfill/2026 --trade-limit-per-market 400)
+          if [ -n "$MAX" ]; then ARGS+=(--max-markets "$MAX"); fi
+          python3 -m polymarket_analytics backfill-year "${ARGS[@]}" 2>&1 | tee data/backfill/2026/job.log
+        continue-on-error: true
+      - name: Package year artifact
+        if: always()
+        run: |
+          mkdir -p dist
+          python3 - <<'PY'
+          import hashlib, json, tarfile
+          from pathlib import Path
+          src = Path("data/backfill/2026")
+          src.mkdir(parents=True, exist_ok=True)
+          out = Path("dist/polymarket-backfill-2026.tar.gz")
+          with tarfile.open(out, "w:gz") as tar:
+              if src.exists():
+                  tar.add(src, arcname="2026")
+          h = hashlib.sha256(out.read_bytes()).hexdigest()
+          Path("dist/polymarket-backfill-2026.sha256").write_text(f"{h}  {out.name}\n")
+          Path("dist/manifest.json").write_text(json.dumps({"year": 2026, "archive": out.name, "sha256": h, "bytes": out.stat().st_size}, indent=2))
+          PY
+      - name: Upload 2026 backfill
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: polymarket-backfill-2026
+          path: dist/
+          retention-days: ${{ needs.preflight.outputs.retention }}
+          if-no-files-found: warn
+
+  l2-collect:
+    name: Prospective L2 collection
+    needs: preflight
+    if: needs.preflight.result == 'success' && github.event.inputs.run_l2_collection == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: python3 -m pip install -r requirements.txt
+      - name: Collect L2 books
+        run: |
+          set -o pipefail
+          DUR="${{ github.event.inputs.l2_duration_seconds }}"
+          N="${{ github.event.inputs.l2_token_limit }}"
+          # Leave headroom before 6h hard limit for packaging
+          if [ "$DUR" -gt 18000 ]; then DUR=18000; fi
+          mkdir -p data/books
+          python3 -m polymarket_analytics collect-books \
+            --duration "$DUR" \
+            --n-tokens "$N" \
+            --data-root data \
+            2>&1 | tee data/books/collector_job.log
+        continue-on-error: true
+      - name: Validate and package L2
+        if: always()
+        run: |
+          mkdir -p dist
+          python3 - <<'PY'
+          import hashlib, json, tarfile
+          from pathlib import Path
+          src = Path("data/books")
+          out = Path("dist/polymarket-l2-overnight.tar.gz")
+          with tarfile.open(out, "w:gz") as tar:
+              if src.exists():
+                  tar.add(src, arcname="books")
+          h = hashlib.sha256(out.read_bytes()).hexdigest() if out.exists() else None
+          health = {}
+          hp = Path("data/books/collector_health.json")
+          if hp.exists():
+              health = json.loads(hp.read_text())
+          man = {"archive": out.name if out.exists() else None, "sha256": h, "health": health}
+          Path("dist/l2_manifest.json").write_text(json.dumps(man, indent=2, default=str))
+          if h:
+              Path("dist/polymarket-l2-overnight.sha256").write_text(f"{h}  {out.name}\n")
+          print(json.dumps(man, indent=2, default=str)[:2000])
+          PY
+      - name: Upload L2 artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: polymarket-l2-overnight
+          path: dist/
+          retention-days: ${{ needs.preflight.outputs.retention }}
+          if-no-files-found: warn
+
+  merge-curate:
+    name: Merge and curate expanded lake
+    needs: [preflight, backfill-2024, backfill-2025, backfill-2026]
+    if: |
+      always() &&
+      needs.preflight.result == 'success' &&
+      github.event.inputs.run_backfill == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: python3 -m pip install -r requirements.txt
+      - name: Download year backfills
+        uses: actions/download-artifact@v4
+        with:
+          pattern: polymarket-backfill-*
+          path: incoming
+          merge-multiple: false
+      - name: Extract and merge
+        run: |
+          set -o pipefail
+          mkdir -p data/backfill data/canonical_expanded
+          python3 - <<'PY'
+          import tarfile
+          from pathlib import Path
+          incoming = Path("incoming")
+          for year in (2024, 2025, 2026):
+              # artifact dirs may nest as polymarket-backfill-YEAR/...
+              cands = list(incoming.rglob(f"polymarket-backfill-{year}.tar.gz"))
+              if not cands:
+                  print(f"missing archive for {year}")
+                  continue
+              dest = Path(f"data/backfill/{year}")
+              dest.mkdir(parents=True, exist_ok=True)
+              with tarfile.open(cands[0], "r:gz") as tar:
+                  tar.extractall("data/backfill")
+              print("extracted", cands[0], "->", dest)
+          PY
+          YEAR_ARGS=()
+          for y in 2024 2025 2026; do
+            if [ -d "data/backfill/$y/curated" ] || [ -d "data/backfill/$y" ]; then
+              YEAR_ARGS+=(--year-dir "data/backfill/$y")
+            fi
+          done
+          EXIST=""
+          if [ -f data/curated/trades_canonical.parquet ]; then
+            EXIST="--existing-canonical data/curated/trades_canonical.parquet"
+          fi
+          python3 -m polymarket_analytics merge-expanded \
+            --data-root data \
+            ${YEAR_ARGS[@]+"${YEAR_ARGS[@]}"} \
+            $EXIST \
+            --out-dir data/canonical_expanded \
+            2>&1 | tee data/canonical_expanded/merge.log
+        continue-on-error: true
+      - name: Package canonical
+        if: always()
+        run: |
+          mkdir -p dist
+          python3 - <<'PY'
+          import hashlib, json, tarfile
+          from pathlib import Path
+          src = Path("data/canonical_expanded")
+          out = Path("dist/polymarket-canonical-expanded.tar.gz")
+          with tarfile.open(out, "w:gz") as tar:
+              if src.exists():
+                  tar.add(src, arcname="canonical_expanded")
+              # include baseline curated for provenance if present
+              base = Path("data/curated")
+              if base.exists():
+                  tar.add(base, arcname="curated_baseline")
+          h = hashlib.sha256(out.read_bytes()).hexdigest()
+          Path("dist/polymarket-canonical-expanded.sha256").write_text(f"{h}  {out.name}\n")
+          Path("dist/manifest.json").write_text(json.dumps({"archive": out.name, "sha256": h, "bytes": out.stat().st_size}, indent=2))
+          PY
+      - name: Upload canonical artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: polymarket-canonical-expanded
+          path: dist/
+          retention-days: ${{ needs.preflight.outputs.retention }}
+          if-no-files-found: warn
+
+  quality-gate:
+    name: Expanded outcome quality gate
+    needs: [preflight, merge-curate]
+    if: |
+      always() &&
+      needs.preflight.result == 'success' &&
+      needs.merge-curate.result != 'cancelled'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    outputs:
+      decision: ${{ steps.gate.outputs.decision }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: python3 -m pip install -r requirements.txt
+      - name: Download canonical
+        uses: actions/download-artifact@v4
+        with:
+          name: polymarket-canonical-expanded
+          path: incoming
+      - name: Extract and evaluate gate
+        id: gate
+        run: |
+          mkdir -p data/canonical_expanded artifacts/gate
+          tar -xzf incoming/polymarket-canonical-expanded.tar.gz -C data || true
+          # locate trades parquet
+          FEAT=$(find data -name 'trades_canonical_expanded.parquet' | head -1)
+          if [ -z "$FEAT" ]; then
+            FEAT=$(find data -name 'trade_features*.parquet' | head -1)
+          fi
+          if [ -z "$FEAT" ]; then
+            FEAT=data/curated/trades_canonical.parquet
+          fi
+          echo "Using features/trades: $FEAT"
+          set +e
+          python3 -m polymarket_analytics outcome-gate --features "$FEAT" --min-events 100 \
+            | tee artifacts/gate/gate.json
+          RC=$?
+          set -e
+          DECISION=$(python3 -c "import json; print(json.load(open('artifacts/gate/gate.json')).get('decision','BLOCKED'))")
+          echo "decision=$DECISION" >> "$GITHUB_OUTPUT"
+          echo "Gate decision: $DECISION (cli_rc=$RC)"
+      - name: Upload gate artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: overnight-quality-gate
+          path: artifacts/gate/
+          retention-days: ${{ needs.preflight.outputs.retention }}
+          if-no-files-found: warn
+
+  outcome-sweep:
+    name: Expanded outcome sweep
+    needs: [preflight, quality-gate, merge-curate]
+    if: |
+      always() &&
+      needs.preflight.result == 'success' &&
+      github.event.inputs.run_outcome_sweep == 'true' &&
+      (needs.quality-gate.outputs.decision == 'PASS-DEFINITIVE' || needs.quality-gate.outputs.decision == 'PASS-BOUNDED')
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: python3 -m pip install -r requirements.txt
+      - name: Download canonical
+        uses: actions/download-artifact@v4
+        with:
+          name: polymarket-canonical-expanded
+          path: incoming
+      - name: Run purged outcome sweep
+        run: |
+          set -o pipefail
+          mkdir -p data/research_expanded data/canonical_expanded
+          tar -xzf incoming/polymarket-canonical-expanded.tar.gz -C data || true
+          FEAT=$(find data -name 'trade_features*.parquet' | head -1)
+          if [ -z "$FEAT" ]; then
+            FEAT=$(find data -name 'trades_canonical_expanded.parquet' | head -1)
+          fi
+          if [ -z "$FEAT" ]; then
+            FEAT=data/curated/trade_features_canonical.parquet
+          fi
+          echo "Sweep features: $FEAT"
+          python3 -m polymarket_analytics sweep-outcomes \
+            --features "$FEAT" \
+            --out-dir data/research_expanded \
+            --train-end "${{ github.event.inputs.train_end }}" \
+            --seed 42 \
+            2>&1 | tee data/research_expanded/sweep.log
+        continue-on-error: true
+      - name: Package sweep
+        if: always()
+        run: |
+          mkdir -p dist
+          python3 - <<'PY'
+          import hashlib, json, tarfile
+          from pathlib import Path
+          src = Path("data/research_expanded")
+          out = Path("dist/polymarket-outcome-sweep.tar.gz")
+          with tarfile.open(out, "w:gz") as tar:
+              if src.exists():
+                  tar.add(src, arcname="research_expanded")
+          h = hashlib.sha256(out.read_bytes()).hexdigest()
+          Path("dist/polymarket-outcome-sweep.sha256").write_text(f"{h}  {out.name}\n")
+          Path("dist/manifest.json").write_text(json.dumps({"archive": out.name, "sha256": h}, indent=2))
+          PY
+      - name: Upload sweep artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: polymarket-outcome-sweep
+          path: dist/
+          retention-days: ${{ needs.preflight.outputs.retention }}
+          if-no-files-found: warn
+
+  final-summary:
+    name: Final overnight summary
+    needs: [preflight, backfill-2024, backfill-2025, backfill-2026, l2-collect, merge-curate, quality-gate, outcome-sweep]
+    if: always() && needs.preflight.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: python3 -m pip install -r requirements.txt
+      - name: Download all research artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: incoming
+          pattern: polymarket-*
+          merge-multiple: false
+        continue-on-error: true
+      - name: Also download preflight/gate
+        uses: actions/download-artifact@v4
+        with:
+          name: overnight-preflight
+          path: incoming/overnight-preflight
+        continue-on-error: true
+      - name: Write morning report
+        run: |
+          mkdir -p artifacts/report docs/research
+          find incoming -type f | head -200 | tee artifacts/report/artifact_index.txt
+          MANIFESTS=()
+          while IFS= read -r f; do
+            MANIFESTS+=(--manifest "$f")
+          done < <(find incoming -name '*.json' | head -40)
+          python3 -m polymarket_analytics overnight-report \
+            --out docs/research/overnight_report.md \
+            "${MANIFESTS[@]+"${MANIFESTS[@]}"}" \
+            2>&1 | tee artifacts/report/report_cli.log || true
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          from datetime import datetime, timezone
+          pieces = {
+            "generated_at": datetime.now(timezone.utc).isoformat(),
+            "git_sha": os.environ.get("GITHUB_SHA"),
+            "run_id": os.environ.get("GITHUB_RUN_ID"),
+            "run_url": f"https://github.com/{os.environ.get('GITHUB_REPOSITORY')}/actions/runs/{os.environ.get('GITHUB_RUN_ID')}",
+            "gate_decision": "${{ needs.quality-gate.outputs.decision }}",
+            "jobs": {
+              "backfill_2024": "${{ needs.backfill-2024.result }}",
+              "backfill_2025": "${{ needs.backfill-2025.result }}",
+              "backfill_2026": "${{ needs.backfill-2026.result }}",
+              "l2_collect": "${{ needs.l2-collect.result }}",
+              "merge_curate": "${{ needs.merge-curate.result }}",
+              "quality_gate": "${{ needs.quality-gate.result }}",
+              "outcome_sweep": "${{ needs.outcome-sweep.result }}",
+            },
+            "inputs": {
+              "run_backfill": "${{ github.event.inputs.run_backfill }}",
+              "run_l2": "${{ github.event.inputs.run_l2_collection }}",
+              "run_sweep": "${{ github.event.inputs.run_outcome_sweep }}",
+              "l2_duration_seconds": "${{ github.event.inputs.l2_duration_seconds }}",
+              "l2_token_limit": "${{ github.event.inputs.l2_token_limit }}",
+            },
+          }
+          Path("artifacts/report/overnight_summary.json").write_text(json.dumps(pieces, indent=2))
+          md = Path("docs/research/overnight_report.md")
+          if not md.exists():
+              md.write_text("# Overnight report\n\n" + json.dumps(pieces, indent=2) + "\n")
+          # GitHub step summary
+          summary = Path(os.environ["GITHUB_STEP_SUMMARY"])
+          summary.write_text(
+              "\n".join([
+                  "# Overnight Polymarket Research",
+                  "",
+                  f"- Run: {pieces['run_url']}",
+                  f"- Gate: **{pieces['gate_decision'] or 'n/a'}**",
+                  f"- Jobs: `{json.dumps(pieces['jobs'])}`",
+                  "",
+                  "Download artifacts from the run page. Retention ~14 days.",
+                  "",
+              ])
+          )
+          print(json.dumps(pieces, indent=2))
+          PY
+          cp -f docs/research/overnight_report.md artifacts/report/ 2>/dev/null || true
+      - name: Upload overnight report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: polymarket-overnight-report
+          path: artifacts/report/
+          retention-days: ${{ needs.preflight.outputs.retention }}
+          if-no-files-found: warn

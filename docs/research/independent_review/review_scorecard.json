@@ -1,0 +1,245 @@
+{
+  "decision": "BLOCKED",
+  "critical_failures": [
+    "gate4_fee_correctness",
+    "gate5_execution_realism",
+    "gate7_data_coverage",
+    "gate8_validation_design"
+  ],
+  "gates": {
+    "gate1_code_test_integrity": {
+      "result": "PASS",
+      "evidence": {
+        "returncode": 0,
+        "summary": [
+          "72 passed in 9.08s"
+        ],
+        "stderr_tail": ""
+      },
+      "notes": "pytest suite; type/lint not enforced in CI for this package"
+    },
+    "gate2_parameter_inventory": {
+      "result": "PASS",
+      "evidence": {
+        "inventory_items": 69,
+        "remediated": [
+          "latency marked Partially wired / inert",
+          "paper spike/ttr matches declared unused",
+          "registry stub statuses corrected to partial"
+        ]
+      },
+      "notes": "Active params inventoried; residual conflicts documented"
+    },
+    "gate3_point_in_time": {
+      "result": "PASS",
+      "evidence": {
+        "rolling_closed": "right (includes current trade)",
+        "caveat": "Features include the decision trade in the rolling window; acceptable for trade-along signals but not pre-trade signals",
+        "resolution_visible_before": false,
+        "token_won_nulls": 0
+      },
+      "notes": "Legacy features.py rolling is PIT-safe for closed='right' at trade time"
+    },
+    "gate4_fee_correctness": {
+      "result": "FAIL",
+      "critical": true,
+      "evidence": {
+        "fee_model_version": "2026-07-polymarket-v1",
+        "historical_schedule_versions": "none (all effective_from=1970-01-01)",
+        "market_fee_category_in_lake": false,
+        "backtest_default_fees": "opt-in only; historical CLI still gross by default",
+        "swing_fees": false
+      },
+      "notes": "PIT fee category missing for all lake rows; only conservative fallback sensitivity is honest \u2014 cannot present definitive fee results"
+    },
+    "gate5_execution_realism": {
+      "result": "FAIL",
+      "critical": true,
+      "evidence": {
+        "l2_book_history": false,
+        "latency_changes_fill": false,
+        "book_walk_default": false,
+        "queue_ahead_on_lake": false,
+        "historical_simulate_uses_trade_print": true
+      },
+      "notes": "No historical depth; cannot walk books or model queue-ahead fills"
+    },
+    "gate6_feature_correctness": {
+      "result": "PASS",
+      "evidence": {
+        "n_features": 17,
+        "by_category": {
+          "prediction_market": {
+            "implemented": 3,
+            "partial": 2,
+            "blocked": 2,
+            "stub": 0,
+            "total": 7
+          },
+          "technical": {
+            "implemented": 2,
+            "partial": 3,
+            "blocked": 0,
+            "stub": 0,
+            "total": 5
+          },
+          "microstructure": {
+            "implemented": 0,
+            "partial": 1,
+            "blocked": 2,
+            "stub": 0,
+            "total": 3
+          },
+          "risk": {
+            "implemented": 0,
+            "partial": 1,
+            "blocked": 0,
+            "stub": 0,
+            "total": 1
+          },
+          "exogenous": {
+            "implemented": 0,
+            "partial": 0,
+            "blocked": 0,
+            "stub": 1,
+            "total": 1
+          }
+        },
+        "implemented": [
+          "logit_price",
+          "logit_edge_vs_half",
+          "ttr_info_hazard",
+          "arcsine_price",
+          "logit_rsi_ema_mad"
+        ],
+        "partial": [
+          "complete_set_residual",
+          "whale_ratio",
+          "volume_spike_1h_24h",
+          "decay_adjusted_velocity",
+          "fill_prob_adverse_markout",
+          "calibration_residual",
+          "inventory_risk_cap"
+        ],
+        "blocked": [
+          "neg_risk_residual",
+          "multi_level_ofi",
+          "book_resilience",
+          "cross_market_lead_lag",
+          "exogenous_news_sentiment"
+        ]
+      },
+      "notes": "Logit/fee/OFI unit-tested; blocked features correctly stubbed after remediation"
+    },
+    "gate7_data_coverage": {
+      "result": "FAIL",
+      "critical": true,
+      "evidence": {
+        "n_trade_feature_rows": 50444,
+        "n_independent_events": 81,
+        "n_tokens": 162,
+        "date_min": "2022-11-21 19:49:29+00:00",
+        "date_max": "2023-08-31 23:47:46+00:00",
+        "duplicate_trade_ids": 776,
+        "timestamp_inversions": 0,
+        "token_won_nulls": 0,
+        "has_l2_books": false,
+        "has_fee_category_column": false,
+        "price_buckets": {
+          "0.00-0.05": 2669,
+          "0.05-0.10": 2678,
+          "0.10-0.20": 5137,
+          "0.20-0.30": 5193,
+          "0.30-0.40": 5135,
+          "0.40-0.50": 4246,
+          "0.50-0.60": 4294,
+          "0.60-0.70": 4466,
+          "0.70-0.80": 4465,
+          "0.80-0.85": 2805,
+          "0.85-0.90": 2341,
+          "0.90-0.95": 2753,
+          "0.95-1.00": 4262
+        }
+      },
+      "notes": "Only 81 independent events (preferred \u2265100); no books; sample lake ~Nov 2022\u2013Aug 2023"
+    },
+    "gate8_validation_design": {
+      "result": "FAIL",
+      "critical": true,
+      "evidence": {
+        "purged_wf_helpers": true,
+        "wired_to_cli_backtest": false,
+        "frozen_final_test_set": false,
+        "representative_script_uses_synthetic": true,
+        "legacy_oos": "chronological split_date only"
+      },
+      "notes": "Scaffolding exists but is not the production backtest path"
+    }
+  },
+  "git_commit": "c6a043f02a66c560986c33a6e78910ae68e0f114",
+  "evaluated_at": "2026-07-26T23:57:00.525897+00:00",
+  "feature_coverage": {
+    "n_features": 17,
+    "by_category": {
+      "prediction_market": {
+        "implemented": 3,
+        "partial": 2,
+        "blocked": 2,
+        "stub": 0,
+        "total": 7
+      },
+      "technical": {
+        "implemented": 2,
+        "partial": 3,
+        "blocked": 0,
+        "stub": 0,
+        "total": 5
+      },
+      "microstructure": {
+        "implemented": 0,
+        "partial": 1,
+        "blocked": 2,
+        "stub": 0,
+        "total": 3
+      },
+      "risk": {
+        "implemented": 0,
+        "partial": 1,
+        "blocked": 0,
+        "stub": 0,
+        "total": 1
+      },
+      "exogenous": {
+        "implemented": 0,
+        "partial": 0,
+        "blocked": 0,
+        "stub": 1,
+        "total": 1
+      }
+    },
+    "implemented": [
+      "logit_price",
+      "logit_edge_vs_half",
+      "ttr_info_hazard",
+      "arcsine_price",
+      "logit_rsi_ema_mad"
+    ],
+    "partial": [
+      "complete_set_residual",
+      "whale_ratio",
+      "volume_spike_1h_24h",
+      "decay_adjusted_velocity",
+      "fill_prob_adverse_markout",
+      "calibration_residual",
+      "inventory_risk_cap"
+    ],
+    "blocked": [
+      "neg_risk_residual",
+      "multi_level_ofi",
+      "book_resilience",
+      "cross_market_lead_lag",
+      "exogenous_news_sentiment"
+    ]
+  },
+  "full_backtest_authorized": false
+}

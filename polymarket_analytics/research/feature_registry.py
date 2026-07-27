@@ -291,8 +291,11 @@ register(
         defaults={"divergence_threshold": 3.0},
         sweep_parameters={"min_whale_ratio": [None, 2.0, 3.0, 4.0, 5.0]},
         point_in_time_safe=True,
-        status="implemented",
-        notes="Legacy Phase 2 feature; threshold WHALE_RATIO_DIVERGENCE_THRESHOLD=3.0",
+        status="partial",
+        notes=(
+            "Computed in features.py; registry compute is pass-through only. "
+            "Threshold WHALE_RATIO_DIVERGENCE_THRESHOLD=3.0"
+        ),
         compute=_compute_whale_ratio,
     )
 )
@@ -307,7 +310,8 @@ register(
         defaults={},
         sweep_parameters={"min_volume_spike": [None, 1.5, 2.0, 3.0]},
         point_in_time_safe=True,
-        status="implemented",
+        status="partial",
+        notes="Computed in features.py; registry compute is pass-through only",
         compute=_compute_volume_spike,
     )
 )
@@ -322,7 +326,8 @@ register(
         defaults={"ttr_floor": 0.1},
         sweep_parameters={"ttr_floor": [0.05, 0.1, 0.25]},
         point_in_time_safe=True,
-        status="implemented",
+        status="partial",
+        notes="Computed in features.py; registry compute is pass-through only",
         compute=_compute_decay_velocity,
     )
 )
@@ -401,8 +406,11 @@ register(
         defaults={"n_bins": 10},
         sweep_parameters={"n_bins": [5, 10, 20]},
         point_in_time_safe=True,
-        status="implemented",
-        notes="Train-only isotonic/bin calibrator residuals in validation.py",
+        status="partial",
+        notes=(
+            "Calibrator helpers live in validation.py; registry compute is a no-op. "
+            "Not attached by apply_features / lake compute-features."
+        ),
         compute=_stub_blocked,
     )
 )
@@ -417,8 +425,11 @@ register(
         defaults={"max_position_pct": 0.05, "max_open_positions": 25},
         sweep_parameters={"max_position_pct": [0.02, 0.05, 0.10]},
         point_in_time_safe=True,
-        status="implemented",
-        notes="Wired via PaperConfig / SwingConfig",
+        status="partial",
+        notes=(
+            "RiskLimits wired into PaperTrader only; registry compute is a no-op. "
+            "SwingTrader does not call check_entry_allowed."
+        ),
         compute=_stub_blocked,
     )
 )

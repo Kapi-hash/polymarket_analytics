@@ -1,12 +1,12 @@
 {
-  "total": 66,
+  "total": 69,
   "by_category": {
     "signal/feature": 13,
-    "entry": 18,
+    "entry": 20,
     "lifecycle": 6,
     "backtest/validation": 2,
     "fee": 5,
-    "execution": 2,
+    "execution": 3,
     "risk": 7,
     "exit": 8,
     "microstructure": 2,
@@ -15,10 +15,10 @@
     "exogenous": 1
   },
   "by_status": {
-    "Active": 58,
+    "Active": 57,
     "Hardcoded": 1,
-    "Partially wired": 3,
+    "Partially wired": 5,
     "Conflicting": 3,
-    "Declared but unused": 1
+    "Declared but unused": 3
   }
 }

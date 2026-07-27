@@ -1,0 +1,16 @@
+{
+  "research_commit": "e5bccfa70accf9d4468a65d39d241a5ac4cc9fab",
+  "base_commit_prior": "c6a043f02a66c560986c33a6e78910ae68e0f114",
+  "dirty": true,
+  "python": "3.12.3",
+  "platform": "macOS-15.5-arm64-arm-64bit",
+  "requirements_sha256": "255b47ae864f6b01ae5d1c1b4dc1bcd60a5a7494e309cd81e07582aba6aaa514",
+  "test_command": "python3 -m pytest tests/ -q",
+  "test_result": "79 passed",
+  "evaluated_at": "2026-07-27T05:30:57.620941+00:00",
+  "preserved_untracked": [
+    "data/swing_trades.json"
+  ],
+  "outcome_authorization": "PASS-BOUNDED",
+  "robust_candidates": 0
+}

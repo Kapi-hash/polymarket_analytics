@@ -1,0 +1,11 @@
+issue,item,source,resolution
+Incorrect status,calibration_residual / inventory_risk_cap marked implemented with stub compute,research/feature_registry.py,Remediated → status=partial
+Incorrect status,whale_ratio / volume_spike / decay registry compute pass-through marked implemented,research/feature_registry.py,Remediated → status=partial
+Declared-but-unused parameter,PaperTrader.matches min_volume_spike / max_ttr always False if set,paper_trader.py:matches,Documented in inventory as Declared but unused
+Incorrect formula / inert param,latency_ms does not delay fills,paper_trader.py / execution.py,Inventory status → Partially wired; EXECUTION_GAPS noted
+Missing inventory item (pre-review),"PaperConfig.use_book_walk default False, CLI-hidden",paper_trader.py,Added to inventory
+Incorrect configuration precedence claim,research_priors.yaml never applied at runtime,config/research_priors.yaml,Precedence doc already correct; confirmed unused
+Conflicting definition,Swing TP-before-SL vs paper stop_first,swing_trader.py / paper_trader.py,Open conflict — documented; not auto-aligned (methodology change)
+Incorrect formula,Legacy simulate_strategy gross-only (no fees/slippage),backtest.py,Remediated: opt-in fee_category / spread_slippage_bps
+Missing test,Fee-aware simulate_strategy,tests/test_phase3_backtest.py,Added test_simulate_strategy_fee_aware_reduces_pnl
+Hidden hardcoded threshold,paper matches PVD uses whale<=3.0 literal,paper_trader.py:330,Already in hardcoded report; remains active

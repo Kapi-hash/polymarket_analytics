@@ -610,9 +610,45 @@ def build_baseline_inventory() -> list[ParameterInventoryItem]:
         current_default=50.0,
         existing_sweep_range="Not defined",
         recommended_sweep_range=[0, 50, 100, 250, 500],
-        usage_sites=["simulate_aggressive_fill"],
-        status="Active",
-        notes="New; not yet wired into PaperTrader path",
+        usage_sites=["simulate_aggressive_fill", "PaperConfig.latency_ms"],
+        status="Partially wired",
+        notes=(
+            "Present on PaperConfig and FillResult.meta, but does not delay quote "
+            "selection or change fill price (inert until delayed-book model exists)."
+        ),
+    )
+    add(
+        name="PaperConfig.use_book_walk",
+        category="execution",
+        declaration_location="paper_trader.py:PaperConfig",
+        current_default=False,
+        existing_sweep_range="Not defined",
+        recommended_sweep_range=[False, True],
+        usage_sites=["PaperTrader.apply_fill_price"],
+        status="Partially wired",
+        notes="Opt-in L1 ask cross; CLI does not expose the flag; no historical L2",
+    )
+    add(
+        name="PaperTrader.matches.min_volume_spike",
+        category="entry",
+        declaration_location="paper_trader.py:PaperTrader.matches",
+        current_default=None,
+        existing_sweep_range="Not defined",
+        recommended_sweep_range=[None, 1.5, 2.0, 3.0],
+        usage_sites=["PaperTrader.matches"],
+        status="Declared but unused",
+        notes="If set, matches() always returns False — LiveFeatures lacks volume_spike",
+    )
+    add(
+        name="PaperTrader.matches.max_time_to_resolution_hours",
+        category="entry",
+        declaration_location="paper_trader.py:PaperTrader.matches",
+        current_default=None,
+        existing_sweep_range="Not defined",
+        recommended_sweep_range=[None, 24, 48, 72],
+        usage_sites=["PaperTrader.matches"],
+        status="Declared but unused",
+        notes="If set, matches() always returns False — LiveFeatures lacks TTR",
     )
     add(
         name="exogenous.*",

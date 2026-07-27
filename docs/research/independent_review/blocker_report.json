@@ -1,0 +1,102 @@
+{
+  "decision": "BLOCKED",
+  "exact_blockers": [
+    {
+      "blocker": "Missing historical order-book (L2/L3) data",
+      "affected_strategies": [
+        "book_walk fills",
+        "queue-ahead maker",
+        "OFI",
+        "book resilience",
+        "capacity from depth"
+      ],
+      "affected_period": "2022-11-21 19:49:29+00:00 \u2192 2023-08-31 23:47:46+00:00",
+      "markets": "all 81 condition_ids",
+      "needed": "Point-in-time multi-level book snapshots or L3 events",
+      "restricted_subset_possible": "Yes: trade-print mid-fill + explicit slippage sensitivity, labeled non-definitive"
+    },
+    {
+      "blocker": "Unknown historical fee regime / missing fee category tags",
+      "affected_strategies": [
+        "all net-of-fee rankings"
+      ],
+      "affected_period": "full lake",
+      "markets": "all",
+      "needed": "Per-market category + dated fee schedule history",
+      "restricted_subset_possible": "Yes: crypto fallback fee stress only; must be labeled FALLBACK"
+    },
+    {
+      "blocker": "Too few independent events for robust discovery",
+      "affected_strategies": [
+        "parameter search / multiple testing"
+      ],
+      "affected_period": "2022-11-21 19:49:29+00:00 \u2192 2023-08-31 23:47:46+00:00",
+      "markets": "81 events",
+      "needed": "Prefer \u2265100 independent events with purged folds",
+      "restricted_subset_possible": "Diagnostic only; not production-ready"
+    },
+    {
+      "blocker": "No frozen production validation path on CLI",
+      "affected_strategies": [
+        "all historical research claims"
+      ],
+      "affected_period": "n/a",
+      "markets": "n/a",
+      "needed": "Wire purged WF + fee-aware simulate into backtest CLI; freeze test set",
+      "restricted_subset_possible": "Scripted restricted harness under data/independent_review/"
+    }
+  ],
+  "full_backtest_ran": false,
+  "restricted_diagnostic_ran": true,
+  "restricted_manifest": {
+    "mode": "restricted_midfill_fee_fallback",
+    "NOT_full_execution_realistic_sweep": true,
+    "git_commit": "c6a043f02a66c560986c33a6e78910ae68e0f114",
+    "data_fingerprint": "376ee60f6a525c7b",
+    "fee_model_version": "2026-07-polymarket-v1",
+    "fee_label": "FALLBACK \u2014 lake lacks fee_category; crypto schedule applied for sensitivity only",
+    "execution_label": "trade-print mid fill + 50bps slip; no L2 walk",
+    "train_end_exclusive": "2023-06-01T00:00:00+00:00",
+    "n_train_rows": 28998,
+    "n_test_rows_purged": 16920,
+    "n_events_train": 44,
+    "n_events_test_purged": 37,
+    "n_attempts": 378,
+    "n_candidates_min_n": 174,
+    "n_surviving_wf": 5,
+    "n_final_tested": 5,
+    "multiple_testing": {
+      "n_trials": 50,
+      "best_sharpe": 8.849057029807803,
+      "dsr": 1.0,
+      "pbo_proxy": 0.0,
+      "fdr_alpha": 0.05,
+      "n_discoveries_bh": 50,
+      "neighborhood_stability": null,
+      "notes": "Scaffolding only \u2014 not a claim of alpha"
+    },
+    "folds_spec": {
+      "n_folds": 3,
+      "train_days": 60,
+      "test_days": 21,
+      "embargo_days": 2
+    },
+    "blockers_remaining": [
+      "no_l2_books",
+      "no_fee_category_metadata",
+      "only_81_events_total",
+      "fee_schedule_not_historically_versioned"
+    ]
+  },
+  "inventory_artifacts": {
+    "markdown": "/Users/isaackaps/Desktop/Trader_bot/scripts/Polymarket Data Collection/docs/research/parameter_inventory.md",
+    "json": "/Users/isaackaps/Desktop/Trader_bot/scripts/Polymarket Data Collection/docs/research/parameter_inventory.json",
+    "csv": "/Users/isaackaps/Desktop/Trader_bot/scripts/Polymarket Data Collection/docs/research/parameter_inventory.csv",
+    "conflicts": "/Users/isaackaps/Desktop/Trader_bot/scripts/Polymarket Data Collection/docs/research/conflict_report.md",
+    "unused": "/Users/isaackaps/Desktop/Trader_bot/scripts/Polymarket Data Collection/docs/research/unused_parameter_report.md",
+    "hardcoded": "/Users/isaackaps/Desktop/Trader_bot/scripts/Polymarket Data Collection/docs/research/hardcoded_threshold_report.md",
+    "missing_tests": "/Users/isaackaps/Desktop/Trader_bot/scripts/Polymarket Data Collection/docs/research/missing_test_report.md",
+    "precedence": "/Users/isaackaps/Desktop/Trader_bot/scripts/Polymarket Data Collection/docs/research/configuration_precedence_report.md",
+    "counts": "/Users/isaackaps/Desktop/Trader_bot/scripts/Polymarket Data Collection/docs/research/inventory_summary_counts.json"
+  }
+}

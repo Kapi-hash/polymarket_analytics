@@ -118,6 +118,29 @@ def test_simulate_strategy_pnl_sharpe_drawdown() -> None:
     assert abs(result.equity_curve[-1] - 2.4) < 1e-9
 
 
+def test_simulate_strategy_fee_aware_reduces_pnl() -> None:
+    """Net-of-fee path must reduce PnL vs gross mid-fill (fallback category labeled)."""
+    df = _feature_frame()
+    params = StrategyParams(
+        price_bucket="0.40-0.50",
+        min_volume_spike=2.0,
+        max_time_to_resolution_hours=48.0,
+        momentum_1h="pos",
+        side="BUY",
+    )
+    gross = simulate_strategy(df, params)
+    net = simulate_strategy(
+        df,
+        params,
+        fee_category="crypto",
+        fee_role="taker",
+        spread_slippage_bps=50.0,
+    )
+    assert net.n == gross.n == 4
+    assert net.total_pnl < gross.total_pnl
+    assert net.ev_pct < gross.ev_pct
+
+
 def test_sharpe_positive_with_mixed_returns() -> None:
     df = _feature_frame().filter(pl.col("price_bucket") == "0.90-0.95")
     result = simulate_strategy(df, StrategyParams(price_bucket="0.90-0.95", side=None))

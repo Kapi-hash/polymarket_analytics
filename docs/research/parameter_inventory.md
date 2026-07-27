@@ -3,7 +3,7 @@
 Code-defined defaults and existing sweep ranges are taken from the repo.
 Recommended ranges are labeled separately and are **not** claimed as existing.
 
-Total parameters: **66**
+Total parameters: **69**
 
 ## A — Signals, entries, exits, microstructure
 
@@ -384,6 +384,26 @@ Total parameters: **66**
 - Status: **Active**
 - Notes: New foundation
 
+### `PaperTrader.matches.min_volume_spike`
+- Category: entry
+- Declaration: `paper_trader.py:PaperTrader.matches`
+- Current default: `None`
+- Existing sweep range: `Not defined`
+- Recommended sweep range: `[None, 1.5, 2.0, 3.0]`
+- Usage: PaperTrader.matches
+- Status: **Declared but unused**
+- Notes: If set, matches() always returns False — LiveFeatures lacks volume_spike
+
+### `PaperTrader.matches.max_time_to_resolution_hours`
+- Category: entry
+- Declaration: `paper_trader.py:PaperTrader.matches`
+- Current default: `None`
+- Existing sweep range: `Not defined`
+- Recommended sweep range: `[None, 24, 48, 72]`
+- Usage: PaperTrader.matches
+- Status: **Declared but unused**
+- Notes: If set, matches() always returns False — LiveFeatures lacks TTR
+
 ## B — Fees, execution, risk, lifecycle
 
 ### `DEFAULT_TTR_BOUNDS`
@@ -569,9 +589,19 @@ Total parameters: **66**
 - Current default: `50.0`
 - Existing sweep range: `Not defined`
 - Recommended sweep range: `[0, 50, 100, 250, 500]`
-- Usage: simulate_aggressive_fill
-- Status: **Active**
-- Notes: New; not yet wired into PaperTrader path
+- Usage: simulate_aggressive_fill, PaperConfig.latency_ms
+- Status: **Partially wired**
+- Notes: Present on PaperConfig and FillResult.meta, but does not delay quote selection or change fill price (inert until delayed-book model exists).
+
+### `PaperConfig.use_book_walk`
+- Category: execution
+- Declaration: `paper_trader.py:PaperConfig`
+- Current default: `False`
+- Existing sweep range: `Not defined`
+- Recommended sweep range: `[False, True]`
+- Usage: PaperTrader.apply_fill_price
+- Status: **Partially wired**
+- Notes: Opt-in L1 ask cross; CLI does not expose the flag; no historical L2
 
 ## C — Validation, calibration, CLI, ingest
 

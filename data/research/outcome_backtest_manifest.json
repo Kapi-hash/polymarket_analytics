@@ -1,0 +1,78 @@
+{
+  "mode": "outcome_strategy_sweep",
+  "NOT_microstructure": true,
+  "fee_model_version": "clob-v1-historical-2026-07-27",
+  "fee_regime": "zero_fee_historical",
+  "fee_confidence": "exact",
+  "fee_scenario": "primary_historical_zero",
+  "execution_label": "adverse_mid_print_slippage_sensitivity",
+  "latency_s_recorded": 1.0,
+  "latency_note": "Latency does not shift prints without next-print path; slip grid is primary stress",
+  "train_end_exclusive": "2023-06-01T00:00:00+00:00",
+  "event_col": "event_id",
+  "n_train_rows": 57907,
+  "n_test_rows_purged": 32250,
+  "n_events_train": 466,
+  "n_events_test": 242,
+  "n_attempts": 270,
+  "n_sufficient": 190,
+  "n_promoted_final": 91,
+  "n_robust_candidates": 0,
+  "slip_grid": [
+    0.0,
+    25.0,
+    50.0,
+    100.0,
+    200.0
+  ],
+  "select_slip_bps": 50.0,
+  "folds": [
+    {
+      "fold_id": 0,
+      "train_start": "2022-11-21",
+      "train_end": "2023-01-20",
+      "test_start": "2023-01-22",
+      "test_end": "2023-02-12",
+      "embargo_start": "2023-01-20",
+      "embargo_end": "2023-01-22"
+    },
+    {
+      "fold_id": 1,
+      "train_start": "2022-12-12",
+      "train_end": "2023-02-10",
+      "test_start": "2023-02-12",
+      "test_end": "2023-03-05",
+      "embargo_start": "2023-02-10",
+      "embargo_end": "2023-02-12"
+    },
+    {
+      "fold_id": 2,
+      "train_start": "2023-01-02",
+      "train_end": "2023-03-03",
+      "test_start": "2023-03-05",
+      "test_end": "2023-03-26",
+      "embargo_start": "2023-03-03",
+      "embargo_end": "2023-03-05"
+    }
+  ],
+  "multiple_testing": {
+    "dsr": {
+      "status": "ok",
+      "dsr": 1.0,
+      "sr0": 1.9500790414709148,
+      "z": 108.23686318879263
+    },
+    "pbo": {
+      "status": "ok",
+      "pbo": 1.0,
+      "method": "rank_proxy",
+      "n_partitions": 190
+    },
+    "fdr": {
+      "status": "unavailable",
+      "reason": "no p-values supplied"
+    }
+  },
+  "seed": 42,
+  "generated_at": "2026-07-27T05:28:48.580085+00:00"
+}
