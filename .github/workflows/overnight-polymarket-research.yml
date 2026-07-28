@@ -147,10 +147,11 @@ jobs:
       - name: Backfill year 2024
         run: |
           set -euo pipefail
+          mkdir -p data/backfill/2024/reports
           MAX="${{ github.event.inputs.backfill_max_markets }}"
           SMOKE="${{ github.event.inputs.smoke_mode }}"
           ARGS=(--year 2024 --out-dir data/backfill/2024 --trade-limit-per-market 400)
-          if [ "$SMOKE" = "true" ]; then ARGS+=(--tiny); elif [ -n "$MAX" ]; then ARGS+=(--max-markets "$MAX"); fi
+          if [ "$SMOKE" = "true" ]; then ARGS+=(--tiny --market-limit 5); elif [ -n "$MAX" ]; then ARGS+=(--max-markets "$MAX"); fi
           python3 -m polymarket_analytics backfill-year "${ARGS[@]}" 2>&1 | tee data/backfill/2024/job.log
           python3 - <<'PY'
           import json, sys
@@ -206,10 +207,11 @@ jobs:
       - name: Backfill year 2025
         run: |
           set -euo pipefail
+          mkdir -p data/backfill/2025/reports
           MAX="${{ github.event.inputs.backfill_max_markets }}"
           SMOKE="${{ github.event.inputs.smoke_mode }}"
           ARGS=(--year 2025 --out-dir data/backfill/2025 --trade-limit-per-market 400)
-          if [ "$SMOKE" = "true" ]; then ARGS+=(--tiny); elif [ -n "$MAX" ]; then ARGS+=(--max-markets "$MAX"); fi
+          if [ "$SMOKE" = "true" ]; then ARGS+=(--tiny --market-limit 5); elif [ -n "$MAX" ]; then ARGS+=(--max-markets "$MAX"); fi
           python3 -m polymarket_analytics backfill-year "${ARGS[@]}" 2>&1 | tee data/backfill/2025/job.log
           python3 - <<'PY'
           import json, sys
@@ -264,10 +266,11 @@ jobs:
       - name: Backfill year 2026
         run: |
           set -euo pipefail
+          mkdir -p data/backfill/2026/reports
           MAX="${{ github.event.inputs.backfill_max_markets }}"
           SMOKE="${{ github.event.inputs.smoke_mode }}"
           ARGS=(--year 2026 --out-dir data/backfill/2026 --trade-limit-per-market 400)
-          if [ "$SMOKE" = "true" ]; then ARGS+=(--tiny); elif [ -n "$MAX" ]; then ARGS+=(--max-markets "$MAX"); fi
+          if [ "$SMOKE" = "true" ]; then ARGS+=(--tiny --market-limit 5); elif [ -n "$MAX" ]; then ARGS+=(--max-markets "$MAX"); fi
           python3 -m polymarket_analytics backfill-year "${ARGS[@]}" 2>&1 | tee data/backfill/2026/job.log
           python3 - <<'PY'
           import json, sys
