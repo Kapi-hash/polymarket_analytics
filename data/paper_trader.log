@@ -3,10 +3,10 @@
 ================================================================================================
      profile |       PnL($) |         ROI% |         Win% |        fills |      fees($) |       maxDD% |       equity
 ------------ | ------------ | ------------ | ------------ | ------------ | ------------ | ------------ | ------------
-profile_rsi_ |        +0.00 |        +0.00 |          0.0 |            0 |       0.0000 |         0.00 |     10000.00
+profile_rsi_ |        +1.00 |        +0.01 |         50.0 |            2 |       0.0000 |         0.10 |     10001.00
+profile_swin |        +1.00 |        +0.01 |        100.0 |            1 |       0.0000 |         0.00 |     10001.00
 profile_mome |        +0.00 |        +0.00 |          0.0 |            0 |       0.0000 |         0.00 |     10000.00
-profile_swin |        +0.00 |        +0.00 |          0.0 |            0 |       0.0000 |         0.00 |     10000.00
-profile_whal |       -16.97 |        -0.17 |          0.0 |            1 |       9.8980 |         0.17 |      9983.03
+profile_whal |        -9.98 |        -0.10 |          0.0 |            1 |       8.7319 |         0.10 |      9990.02
 ================================================================================================
 {
   "ok": true,
@@ -18,35 +18,35 @@ profile_whal |       -16.97 |        -0.17 |          0.0 |            1 |      
       "kind": "paper",
       "journal": "data/paper_trades_whale.json",
       "realized_pnl": 0.0,
-      "unrealized_pnl": -16.96809269504282,
-      "total_pnl": -16.96809269504282,
-      "roi_pct": -0.1696809269504282,
+      "unrealized_pnl": -9.976876333916627,
+      "total_pnl": -9.976876333916627,
+      "roi_pct": -0.09976876333916626,
       "win_rate_pct": 0.0,
       "fills": 1,
       "n_closed": 0,
-      "fees_paid": 9.897951,
-      "max_drawdown_pct": 0.16968092695042286,
-      "equity": 9983.031907304958,
+      "fees_paid": 8.73194,
+      "max_drawdown_pct": 0.10475848812440745,
+      "equity": 9990.023123666084,
       "bankroll": 10000.0,
-      "cash": 9705.882352859277
+      "cash": 9741.035856882752
     },
     {
       "profile": "profile_rsi_mean_reversion",
       "description": "RSI < 25 on >$50k liq \u2192 20-EMA target",
       "kind": "swing",
       "journal": "data/paper_trades_rsi.json",
-      "realized_pnl": 0.0,
+      "realized_pnl": 1.00401606425703,
       "unrealized_pnl": 0,
-      "total_pnl": 0.0,
-      "roi_pct": 0.0,
-      "win_rate_pct": 0.0,
-      "fills": 0,
-      "n_closed": 0,
+      "total_pnl": 1.00401606425703,
+      "roi_pct": 0.0100401606425703,
+      "win_rate_pct": 50.0,
+      "fills": 2,
+      "n_closed": 2,
       "fees_paid": 0.0,
-      "max_drawdown_pct": 0.0,
-      "equity": 10000.0,
+      "max_drawdown_pct": 0.09990009990010786,
+      "equity": 10001.004016064257,
       "bankroll": 10000.0,
-      "cash": 10000.0
+      "cash": 10001.004016064257
     },
     {
       "profile": "profile_momentum_drift",
@@ -71,18 +71,18 @@ profile_whal |       -16.97 |        -0.17 |          0.0 |            1 |      
       "description": "2+ of book imbalance / EMA cross / RSI oversold",
       "kind": "swing",
       "journal": "data/paper_trades_swing.json",
-      "realized_pnl": 0.0,
+      "realized_pnl": 1.00401606425703,
       "unrealized_pnl": 0,
-      "total_pnl": 0.0,
-      "roi_pct": 0.0,
-      "win_rate_pct": 0.0,
-      "fills": 0,
-      "n_closed": 0,
+      "total_pnl": 1.00401606425703,
+      "roi_pct": 0.0100401606425703,
+      "win_rate_pct": 100.0,
+      "fills": 1,
+      "n_closed": 1,
       "fees_paid": 0.0,
       "max_drawdown_pct": 0.0,
-      "equity": 10000.0,
+      "equity": 10001.004016064257,
       "bankroll": 10000.0,
-      "cash": 10000.0
+      "cash": 10001.004016064257
     }
   ]
 }
