@@ -988,6 +988,9 @@ def build_parser() -> argparse.ArgumentParser:
     gate_p = sub.add_parser("outcome-gate", help="Evaluate outcome research evidence gate")
     gate_p.add_argument("--features", type=Path, required=True)
     gate_p.add_argument("--min-events", type=int, default=100)
+    gate_p.add_argument("--train-end", type=str, default="2025-01-01T00:00:00+00:00")
+    gate_p.add_argument("--baseline-rows", type=int, default=None)
+    gate_p.add_argument("--used-baseline-fallback", action="store_true")
     gate_p.set_defaults(func=_cmd_outcome_gate)
 
     report_p = sub.add_parser("overnight-report", help="Write morning report from research manifests")
@@ -1047,52 +1050,18 @@ def _cmd_sweep_outcomes(args: argparse.Namespace) -> int:
         out_dir=Path(args.out_dir),
         seed=args.seed,
     )
-    print(json.dumps({"ok": result.get("status") == "ok", **result}, indent=2, default=str))
-    return 0 if result.get("status") == "ok" else 1
+    ok = result.get("status") == "ok"
+    print(json.dumps({"ok": ok, **result}, indent=2, default=str))
+    return 0 if ok else 1
 
 
 def _cmd_collect_books(args: argparse.Namespace) -> int:
-    from polymarket_analytics.collectors.book_collector import run_smoke_test
+    from polymarket_analytics.collectors.book_collector import discover_active_token_ids, run_collection
 
-    token_ids = args.token_id
+    token_ids = [str(t) for t in (args.token_id or [])]
     if not token_ids:
         try:
-            import json as _json
-            from urllib.request import Request, urlopen
-
-            req = Request(
-                "https://gamma-api.polymarket.com/markets?active=true&closed=false&limit=10",
-                headers={"User-Agent": "polymarket-analytics-research/0.7"},
-            )
-            with urlopen(req, timeout=20) as resp:
-                markets = _json.loads(resp.read().decode())
-            token_ids = []
-            for m in markets:
-                raw = m.get("clobTokenIds") or m.get("clob_token_ids")
-                if isinstance(raw, str):
-                    try:
-                        raw = _json.loads(raw)
-                    except Exception:
-                        raw = None
-                if isinstance(raw, list) and raw:
-                    token_ids.append(str(raw[0]))
-                if len(token_ids) >= args.n_tokens:
-                    break
-            if not token_ids:
-                # Fallback: CLOB markets listing
-                req2 = Request(
-                    "https://clob.polymarket.com/markets?limit=20",
-                    headers={"User-Agent": "polymarket-analytics-research/0.7"},
-                )
-                with urlopen(req2, timeout=20) as resp:
-                    payload = _json.loads(resp.read().decode())
-                for m in payload.get("data") or []:
-                    tid = m.get("tokens") or m.get("clob_token_ids")
-                    if isinstance(tid, list) and tid:
-                        tok = tid[0]
-                        token_ids.append(str(tok.get("token_id") if isinstance(tok, dict) else tok))
-                    if len(token_ids) >= args.n_tokens:
-                        break
+            token_ids = discover_active_token_ids(args.n_tokens)
         except Exception as exc:  # noqa: BLE001
             print(json.dumps({"ok": False, "error": f"token discovery failed: {exc}"}))
             return 1
@@ -1100,20 +1069,14 @@ def _cmd_collect_books(args: argparse.Namespace) -> int:
         print(json.dumps({"ok": False, "error": "no token ids"}))
         return 1
 
-    report = run_smoke_test(
+    report = run_collection(
         token_ids=token_ids[: args.n_tokens],
         duration_sec=args.duration,
         max_tokens=args.n_tokens,
         data_root=Path(args.data_root),
     )
-    health_path = Path(args.data_root) / "books" / "collector_health.json"
-    health_path.parent.mkdir(parents=True, exist_ok=True)
-    health_path.write_text(
-        json.dumps({"ok": True, "tokens": token_ids[: args.n_tokens], **report}, indent=2, default=str),
-        encoding="utf-8",
-    )
-    print(json.dumps({"ok": True, "tokens": token_ids[: args.n_tokens], **report, "health_path": str(health_path)}, indent=2, default=str))
-    return 0
+    print(json.dumps(report, indent=2, default=str))
+    return 0 if report.get("ok") else 1
 
 
 def _cmd_backfill_year(args: argparse.Namespace) -> int:
@@ -1121,16 +1084,29 @@ def _cmd_backfill_year(args: argparse.Namespace) -> int:
 
     max_markets = 5 if args.tiny else args.max_markets
     trade_limit = 50 if args.tiny else args.trade_limit_per_market
-    result = backfill_year(args.year, args.out_dir, market_limit=args.market_limit,
-                           max_markets=max_markets, trade_limit_per_market=trade_limit)
+    try:
+        result = backfill_year(
+            args.year,
+            args.out_dir,
+            market_limit=args.market_limit,
+            max_markets=max_markets,
+            trade_limit_per_market=trade_limit,
+        )
+    except RuntimeError as exc:
+        print(json.dumps({"ok": False, "error": str(exc)}, indent=2))
+        return 1
     print(json.dumps({"ok": True, **result}, indent=2, default=str))
-    return 0
+    return 0 if result.get("status") in {"ok", "bounded"} else 1
 
 
 def _cmd_merge_expanded(args: argparse.Namespace) -> int:
     from polymarket_analytics.research.overnight_merge import merge_expanded_lake
 
-    result = merge_expanded_lake(args.data_root, args.year_dir, args.existing_canonical, args.out_dir)
+    try:
+        result = merge_expanded_lake(args.data_root, args.year_dir, args.existing_canonical, args.out_dir)
+    except Exception as exc:  # noqa: BLE001
+        print(json.dumps({"ok": False, "error": f"{type(exc).__name__}: {exc}"}, indent=2))
+        return 1
     print(json.dumps({"ok": True, **result}, indent=2, default=str))
     return 0
 
@@ -1138,7 +1114,13 @@ def _cmd_merge_expanded(args: argparse.Namespace) -> int:
 def _cmd_outcome_gate(args: argparse.Namespace) -> int:
     from polymarket_analytics.research.overnight_gate import evaluate_outcome_gate
 
-    result = evaluate_outcome_gate(args.features, min_events=args.min_events)
+    kwargs = {
+        "min_events": args.min_events,
+        "train_end_exclusive": getattr(args, "train_end", "2025-01-01T00:00:00+00:00"),
+        "baseline_feature_rows": getattr(args, "baseline_rows", None),
+        "used_baseline_fallback": bool(getattr(args, "used_baseline_fallback", False)),
+    }
+    result = evaluate_outcome_gate(args.features, **kwargs)
     print(json.dumps(result, indent=2, default=str))
     return 0 if result["decision"] != "BLOCKED" else 1
 

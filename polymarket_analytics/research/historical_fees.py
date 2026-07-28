@@ -40,6 +40,7 @@ def lookup_fee_regime(
     From 2026-01-06 onward: current CATEGORY_TAKER_FEE_RATES schedule.
     """
     as_of_date = _as_date_str(as_of)
+    provided = category is not None and str(category).strip() != ""
     cat = (category or "crypto").strip().lower()
 
     if as_of_date <= _ZERO_FEE_END:
@@ -50,7 +51,7 @@ def lookup_fee_regime(
             "taker_bps": 0.0,
             "taker_rate": 0.0,
             "maker_multiplier": 0.0,
-            "category": cat,
+            "category": cat if provided else "unknown",
             "formula": "fee = 0 (historical zero-fee era)",
             "evidence": _ZERO_FEE_EVIDENCE,
             "fee_model_version": FEE_MODEL_VERSION,
@@ -59,19 +60,23 @@ def lookup_fee_regime(
             "effective_to": _ZERO_FEE_END,
         }
 
+    known = provided and cat in CATEGORY_TAKER_FEE_RATES
     rate = float(CATEGORY_TAKER_FEE_RATES.get(cat, CATEGORY_TAKER_FEE_RATES["crypto"]))
+    confidence: Confidence = "strongly_evidenced" if known else "fallback"
     return {
-        "fee_regime": "clob_v2_category",
-        "fee_confidence": "strongly_evidenced",
+        "fee_regime": "clob_v2_category" if known else "clob_v2_unknown_category_fallback",
+        "fee_confidence": confidence,
         "maker_bps": 0.0,
         "taker_bps": rate * 10_000.0 * 0.25,  # peak at p=0.5 → rate * 0.25 notional
         "taker_rate": rate,
         "maker_multiplier": DEFAULT_MAKER_MULTIPLIER,
-        "category": cat,
+        "category": cat if known else f"unknown:{cat}",
         "formula": "fee = C × feeRate × p × (1 − p)",
         "evidence": (
             "Current Polymarket category schedule (post 2026-01-06); "
             "not applicable to 2022-2023 lake backtests."
+            if known
+            else "Unknown category: crypto schedule used only as fallback sensitivity, not definitive."
         ),
         "fee_model_version": FEE_MODEL_VERSION,
         "as_of": as_of_date,

@@ -17,12 +17,12 @@ def test_market_year_filter_accepts_closed_or_end_date() -> None:
     assert not _market_matches_year({"closedTime": "not-a-date"}, 2024)
 
 
-def test_trade_id_uses_transaction_and_event_index() -> None:
-    assert _trade_id({"transactionHash": "0xabc", "logIndex": 7}, 2) == "0xabc_7"
-    assert _trade_id({"tx_hash": "0xdef"}, 9) == "0xdef_9"
+def test_trade_id_uses_transaction_event_index_and_asset() -> None:
+    assert _trade_id({"transactionHash": "0xabc", "logIndex": 7, "asset": "9"}, 2) == "0xabc_7_9"
+    assert _trade_id({"tx_hash": "0xdef"}, 9) == "0xdef_9_"
 
 
-def test_gate_blocks_tiny_outcome_frame() -> None:
+def test_gate_blocks_missing_event_id() -> None:
     frame = pl.DataFrame(
         {
             "trade_id": ["a", "b"],
@@ -35,6 +35,5 @@ def test_gate_blocks_tiny_outcome_frame() -> None:
             ],
         }
     )
-    result = evaluate_outcome_gate(frame)
+    result = evaluate_outcome_gate(frame, train_end_exclusive=None, require_expansion=False)
     assert result["decision"] == "BLOCKED"
-    assert result["evidence"]["n_events"] == 2

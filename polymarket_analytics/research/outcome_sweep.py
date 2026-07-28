@@ -176,15 +176,16 @@ def run_outcome_sweep(
     out_dir.mkdir(parents=True, exist_ok=True)
 
     if features.is_empty() or "token_won" not in features.columns:
-        return {"status": "unavailable", "reason": "empty features or missing token_won"}
+        return {"status": "BLOCKED", "reason": "empty features or missing token_won"}
 
     # Normalize timezone
     features = features.with_columns(pl.col("traded_at").dt.convert_time_zone("UTC"))
-    event_col = (
-        "event_id"
-        if "event_id" in features.columns and features["event_id"].null_count() < features.height * 0.5
-        else "condition_id"
-    )
+    if "event_id" not in features.columns or features["event_id"].null_count() > features.height * 0.05:
+        return {
+            "status": "BLOCKED",
+            "reason": "event_id missing or <95% populated; condition_id fallback forbidden",
+        }
+    event_col = "event_id"
     time_col = "traded_at"
 
     train_end = datetime.fromisoformat(train_end_exclusive.replace("Z", "+00:00"))
@@ -193,10 +194,32 @@ def run_outcome_sweep(
     train_events = set(train_df[event_col].drop_nulls().to_list())
     test_df = mask_event_leakage(test_raw, train_events, event_col=event_col)
 
+    n_train_events = len(train_events)
+    n_test_events = int(test_df[event_col].drop_nulls().n_unique()) if not test_df.is_empty() else 0
+    if n_train_events < max(min_train_events, 50):
+        return {
+            "status": "BLOCKED",
+            "reason": f"insufficient train events ({n_train_events} < 50)",
+            "n_train_events": n_train_events,
+            "n_test_events": n_test_events,
+            "n_test_rows_purged": test_df.height,
+        }
+    if test_df.height == 0 or n_test_events < 20:
+        return {
+            "status": "BLOCKED",
+            "reason": (
+                f"locked-test coverage inadequate "
+                f"(rows={test_df.height}, events={n_test_events}; need >=20 events and >0 rows)"
+            ),
+            "n_train_events": n_train_events,
+            "n_test_events": n_test_events,
+            "n_test_rows_purged": test_df.height,
+            "train_end_exclusive": train_end_exclusive,
+        }
+
     t_min = train_df[time_col].min()
     if t_min is None:
-        return {"status": "unavailable", "reason": "empty train"}
-
+        return {"status": "BLOCKED", "reason": "empty train"}
     folds = purged_walk_forward_folds(
         start=t_min,
         end=train_end,
