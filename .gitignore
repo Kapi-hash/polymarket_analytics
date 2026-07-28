@@ -16,5 +16,9 @@ data/canonical_expanded/
 data/research_expanded/
 data/books/raw/
 data/books/normalized/
+data/books/runs/
+!data/books/runs/.gitkeep
+data/books/collector_health.json
+data/books/collector_job.log
 *.tar.gz
 *.tar.zst

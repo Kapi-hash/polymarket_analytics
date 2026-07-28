@@ -133,13 +133,19 @@ def compute_time_to_resolution(
             pl.lit(None, dtype=pl.Float64).alias("time_to_resolution_hours")
         )
 
+    # Precedence: resolved_at > closed_at > closed_time > end_date (only existing cols).
+    close_parts = [
+        pl.col(c)
+        for c in ("resolved_at", "closed_at", "closed_time", "end_date")
+        if c in markets.columns
+    ]
+    if not close_parts:
+        return trades.select("trade_id").with_columns(
+            pl.lit(None, dtype=pl.Float64).alias("time_to_resolution_hours")
+        )
     close = markets.select(
         "condition_id",
-        pl.coalesce(
-            pl.col("resolved_at"),
-            pl.col("closed_at"),
-            pl.col("end_date"),
-        ).alias("close_time"),
+        pl.coalesce(close_parts).alias("close_time"),
     )
     joined = trades.select("trade_id", "condition_id", "traded_at").join(
         close, on="condition_id", how="left"
