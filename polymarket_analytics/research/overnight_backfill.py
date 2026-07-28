@@ -292,8 +292,8 @@ def backfill_year(
             "limit": 100,
             "end_date_min": f"{year}-01-01",
             "end_date_max": f"{year}-12-31",
-            "order": "endDate",
-            "ascending": "true",
+            "order": "volume",
+            "ascending": "false",
         }
         if after_cursor:
             params["after_cursor"] = after_cursor
@@ -352,11 +352,16 @@ def backfill_year(
                 )
                 continue
             n_seen += 1
+            volume = float(market.get("volumeNum") or market.get("volume") or 0.0)
+            if volume <= 0:
+                failures.append({"condition_id": cid, "reason": "skipped_zero_volume", "detail": "volume<=0"})
+                continue
             market_rows.append(_normalize_market(market, year))
             if cid in completed:
                 continue
             n_selected += 1
             n_markets_queried += 1
+            trades_before = len(trade_rows)
             try:
                 for page_index, trade_offset in enumerate(range(0, trade_limit_per_market, 100)):
                     # CRITICAL: use market=<conditionId>, not conditionId=
@@ -406,8 +411,13 @@ def backfill_year(
                     if len(records_t) < 100:
                         break
                 completed.add(cid)
+                if len(trade_rows) == trades_before:
+                    # Do not consume the max_markets budget on empty markets when scanning.
+                    n_selected = max(0, n_selected - 1)
+                    failures.append({"condition_id": cid, "reason": "no_in_year_trades", "detail": "queried ok, 0 kept"})
             except Exception as exc:  # do not mark failed markets complete
                 failures.append({"condition_id": cid, "reason": "trade_fetch_failed", "detail": str(exc)})
+                n_selected = max(0, n_selected - 1)
 
             state = {
                 "after_cursor": next_cursor,
@@ -494,7 +504,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--tiny", action="store_true")
     args = parser.parse_args(argv)
     if args.tiny:
-        args.max_markets, args.trade_limit_per_market = 5, 50
+        args.max_markets = args.max_markets or 5
+        args.trade_limit_per_market = min(args.trade_limit_per_market, 50)
+        args.market_limit = args.market_limit or 10
     try:
         result = backfill_year(
             args.year,
