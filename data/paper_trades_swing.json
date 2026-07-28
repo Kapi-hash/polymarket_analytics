@@ -1,13 +1,13 @@
 {
-  "updated_at": "2026-07-28T00:59:30.346003+00:00",
+  "updated_at": "2026-07-28T13:28:56.560718+00:00",
   "bankroll_initial": 10000.0,
-  "cash": 10001.004016064257,
-  "equity": 10001.004016064257,
-  "realized_pnl": 1.00401606425703,
+  "cash": 10000.0,
+  "equity": 10000.0,
+  "realized_pnl": 0.0,
   "unrealized_pnl": 0,
-  "ticks_seen": 285,
-  "signals_fired": 1,
-  "fills": 1,
+  "ticks_seen": 169,
+  "signals_fired": 0,
+  "fills": 0,
   "min_ev_pct": 5.0,
   "config": {
     "bankroll": 10000.0,
@@ -44,54 +44,9 @@
     "confluence_book_min": 2.5
   },
   "open_positions": [],
-  "closed_positions": [
-    {
-      "position_id": "55b25fa8",
-      "strategy": "confluence",
-      "token_id": "105267568073659068217311993901927962476298440625043565106676088842803600775810",
-      "condition_id": "0xbb57ccf5853a85487bc3d83d04d669310d28c6c810758953b9d9b91d1aee89d2",
-      "entry_ts": 1785193224.079,
-      "entry_price": 0.498,
-      "shares": 1004.0160642570281,
-      "notional": 500.0,
-      "target_price": 0.5976,
-      "stop_price": 0.4482,
-      "trailing_stop": 0.499,
-      "mark_price": 0.499,
-      "status": "stop_loss",
-      "exit_ts": 1785197421.731,
-      "exit_price": 0.499,
-      "exit_reason": "stop_loss",
-      "realized_pnl": 1.00401606425703,
-      "reason": "confluence[2]: bid/ask=10.00x; rsi=0.0<30",
-      "unrealized_pnl": 0.0,
-      "return_pct": 0.002008032128514058
-    }
-  ],
-  "recent_signals": [
-    {
-      "strategy": "confluence",
-      "token_id": "105267568073659068217311993901927962476298440625043565106676088842803600775810",
-      "condition_id": "0xbb57ccf5853a85487bc3d83d04d669310d28c6c810758953b9d9b91d1aee89d2",
-      "ts": 1785193224.079,
-      "entry_price": 0.498,
-      "target_price": 0.5976,
-      "stop_price": 0.4482,
-      "reason": "confluence[2]: bid/ask=10.00x; rsi=0.0<30",
-      "indicators": {
-        "n_legs": 2,
-        "legs": [
-          "signal_liquidity",
-          "signal_rsi"
-        ],
-        "rsi": 0.0,
-        "ema_fast": 0.4986665218713861,
-        "ema_slow": 0.49886800465052367,
-        "atr": 7.142857142857149e-05
-      }
-    }
-  ],
+  "closed_positions": [],
+  "recent_signals": [],
   "profile": "profile_swing_confluence",
   "max_drawdown_pct": 0.0,
-  "peak_equity": 10001.004016064257
+  "peak_equity": 10000.0
 }
