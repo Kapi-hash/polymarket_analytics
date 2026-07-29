@@ -1,0 +1,134 @@
+# Continuous L2 book collection — scheduled every 6 hours.
+name: L2 Collect
+
+concurrency:
+  group: l2-collect
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+"on":
+  schedule:
+    - cron: "0 */6 * * *"
+  workflow_dispatch:
+    inputs:
+      duration_seconds:
+        description: Collection duration (seconds)
+        type: string
+        default: "18000"
+      n_tokens:
+        description: Max tokens to subscribe
+        type: string
+        default: "100"
+      seed:
+        description: Universe rotation seed
+        type: string
+        default: "42"
+      smoke:
+        description: Short smoke bounds
+        type: boolean
+        default: false
+
+env:
+  PYTHONUNBUFFERED: "1"
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+
+jobs:
+  collect:
+    name: L2 session collection
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install dependencies
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install -r requirements.txt
+      - name: Collect L2 session
+        run: |
+          set -euo pipefail
+          DUR="${{ github.event.inputs.duration_seconds || '18000' }}"
+          N="${{ github.event.inputs.n_tokens || '100' }}"
+          SEED="${{ github.event.inputs.seed || '42' }}"
+          SMOKE="${{ github.event.inputs.smoke || 'false' }}"
+          if [ "$SMOKE" = "true" ]; then DUR=45; N=5; fi
+          if [ "$DUR" -gt 18000 ]; then DUR=18000; fi
+          mkdir -p data/books/sessions artifacts/l2
+          rm -rf data/books/raw data/books/normalized data/books/collector_health.json
+          python3 -m polymarket_analytics collect-books \
+            --full-session \
+            --universe diversified \
+            --duration "$DUR" \
+            --n-tokens "$N" \
+            --seed "$SEED" \
+            --data-root data \
+            2>&1 | tee artifacts/l2/collector_job.log
+          python3 - <<'PY'
+          import json, sys
+          from pathlib import Path
+          sessions = sorted(Path("data/books/sessions").iterdir()) if Path("data/books/sessions").exists() else []
+          if not sessions:
+              raise SystemExit("no session directory created")
+          session_dir = sessions[-1]
+          health = json.loads((session_dir / "health.json").read_text())
+          sid = session_dir.name
+          print(json.dumps({"session_id": sid, "session_dir": str(session_dir), "ok": health.get("ok")}, indent=2))
+          Path("artifacts/l2/session_pointer.json").write_text(json.dumps({"session_id": sid, "session_dir": str(session_dir)}, indent=2))
+          if not health.get("ok", False):
+              raise SystemExit(f"health.ok false: {health.get('error')}")
+          PY
+      - name: Build artifact index fragment
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from datetime import datetime, timezone
+          from pathlib import Path
+          ptr = json.loads(Path("artifacts/l2/session_pointer.json").read_text())
+          sid = ptr["session_id"]
+          fragment = {
+            "session_id": sid,
+            "workflow_run_id": "${{ github.run_id }}",
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "artifacts": {
+              "raw": f"l2-session-raw-{sid}",
+              "normalized": f"l2-session-norm-{sid}",
+              "manifest": f"l2-session-manifest-{sid}",
+            },
+          }
+          Path("artifacts/l2/index_fragment.json").write_text(json.dumps(fragment, indent=2))
+          PY
+      - name: Resolve session id
+        id: sid
+        run: |
+          SID=$(python3 -c "import json; print(json.load(open('artifacts/l2/session_pointer.json'))['session_id'])")
+          echo "session_id=${SID}" >> "$GITHUB_OUTPUT"
+      - name: Upload raw artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: l2-session-raw-${{ steps.sid.outputs.session_id }}
+          path: data/books/sessions/${{ steps.sid.outputs.session_id }}/raw/
+          retention-days: 7
+      - name: Upload normalized artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: l2-session-norm-${{ steps.sid.outputs.session_id }}
+          path: data/books/sessions/${{ steps.sid.outputs.session_id }}/normalized/
+          retention-days: 30
+      - name: Upload manifest artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: l2-session-manifest-${{ steps.sid.outputs.session_id }}
+          path: |
+            data/books/sessions/${{ steps.sid.outputs.session_id }}/session_manifest.json
+            data/books/sessions/${{ steps.sid.outputs.session_id }}/health.json
+            data/books/sessions/${{ steps.sid.outputs.session_id }}/fingerprints.json
+            data/books/sessions/${{ steps.sid.outputs.session_id }}/gap_report.json
+            data/books/sessions/${{ steps.sid.outputs.session_id }}/metadata/
+            artifacts/l2/index_fragment.json
+          retention-days: 90

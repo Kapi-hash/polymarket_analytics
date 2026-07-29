@@ -1,0 +1,249 @@
+# Daily compaction of L2 session artifacts (after collection window).
+name: L2 Compact Daily
+
+concurrency:
+  group: l2-compact-daily
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  actions: read
+
+"on":
+  schedule:
+    - cron: "30 1 * * *"
+  workflow_dispatch:
+    inputs:
+      utc_date:
+        description: UTC date YYYY-MM-DD (default yesterday)
+        type: string
+        default: ""
+
+env:
+  PYTHONUNBUFFERED: "1"
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+
+jobs:
+  compact:
+    name: Compact L2 daily bundle
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: python3 -m pip install -r requirements.txt
+      - name: Resolve UTC date
+        id: date
+        run: |
+          set -euo pipefail
+          INPUT="${{ github.event.inputs.utc_date }}"
+          if [ -n "$INPUT" ]; then
+            UTC_DATE="$INPUT"
+          else
+            UTC_DATE=$(python3 -c "from datetime import datetime, timedelta, timezone; print((datetime.now(timezone.utc)-timedelta(days=1)).strftime('%Y-%m-%d'))")
+          fi
+          echo "utc_date=${UTC_DATE}" >> "$GITHUB_OUTPUT"
+      - name: Download matching session artifacts
+        env:
+          GH_TOKEN: ${{ github.token }}
+          UTC_DATE: ${{ steps.date.outputs.utc_date }}
+        run: |
+          set -euo pipefail
+          mkdir -p data/books/sessions artifacts/l2
+          python3 - <<'PY'
+          import json, os, shutil, subprocess, sys, zipfile
+          from pathlib import Path
+
+          utc_date = os.environ["UTC_DATE"]
+          repo = os.environ["GITHUB_REPOSITORY"]
+          sessions_root = Path("data/books/sessions")
+          sessions_root.mkdir(parents=True, exist_ok=True)
+          work = Path("artifacts/l2/download_work")
+          if work.exists():
+              shutil.rmtree(work)
+          work.mkdir(parents=True)
+
+          proc = subprocess.run(
+              ["gh", "api", "--paginate", f"repos/{repo}/actions/artifacts"],
+              capture_output=True,
+              text=True,
+              check=False,
+          )
+          if proc.returncode != 0:
+              print(proc.stderr, file=sys.stderr)
+              raise SystemExit(proc.returncode)
+
+          artifacts: list[dict] = []
+          decoder = json.JSONDecoder()
+          idx = 0
+          raw = proc.stdout.lstrip()
+          while idx < len(raw):
+              doc, offset = decoder.raw_decode(raw[idx:])
+              artifacts.extend(doc.get("artifacts") or [])
+              idx += offset
+              while idx < len(raw) and raw[idx].isspace():
+                  idx += 1
+
+          manifests = [
+              a for a in artifacts
+              if str(a.get("name", "")).startswith("l2-session-manifest-") and not a.get("expired")
+          ]
+          selected: list[dict] = []
+          download_errors: list[str] = []
+
+          def download_artifact(artifact_id: int, dest: Path) -> None:
+              dest.mkdir(parents=True, exist_ok=True)
+              zip_path = dest / "a.zip"
+              with open(zip_path, "wb") as fh:
+                  subprocess.run(
+                      ["gh", "api", f"repos/{repo}/actions/artifacts/{artifact_id}/zip"],
+                      check=True,
+                      stdout=fh,
+                  )
+              with zipfile.ZipFile(zip_path) as zf:
+                  zf.extractall(dest)
+              zip_path.unlink(missing_ok=True)
+
+          def session_utc_date(root: Path) -> str | None:
+              for name in ("session_manifest.json", "health.json"):
+                  for cand in root.rglob(name):
+                      try:
+                          payload = json.loads(cand.read_text(encoding="utf-8"))
+                      except json.JSONDecodeError:
+                          continue
+                      for key in ("utc_date", "start_utc", "started_at_iso", "started_at"):
+                          val = payload.get(key) or (payload.get("extra") or {}).get(key)
+                          if val:
+                              return str(val)[:10]
+              return None
+
+          for man in manifests:
+              sid = str(man["name"]).removeprefix("l2-session-manifest-")
+              dest = work / f"manifest-{sid}"
+              try:
+                  download_artifact(int(man["id"]), dest)
+              except Exception as exc:  # noqa: BLE001
+                  download_errors.append(f"manifest {sid}: {exc}")
+                  continue
+              day = session_utc_date(dest)
+              if day != utc_date:
+                  continue
+
+              session_dir = sessions_root / sid
+              session_dir.mkdir(parents=True, exist_ok=True)
+              for fp in dest.rglob("*"):
+                  if not fp.is_file():
+                      continue
+                  if fp.parent.name == "metadata":
+                      (session_dir / "metadata").mkdir(exist_ok=True)
+                      shutil.copy2(fp, session_dir / "metadata" / fp.name)
+                  elif fp.name in {
+                      "session_manifest.json",
+                      "health.json",
+                      "fingerprints.json",
+                      "gap_report.json",
+                      "index_fragment.json",
+                  }:
+                      shutil.copy2(fp, session_dir / fp.name)
+
+              for prefix, sub in (("l2-session-norm-", "normalized"), ("l2-session-raw-", "raw")):
+                  name = f"{prefix}{sid}"
+                  art = next((a for a in artifacts if a.get("name") == name and not a.get("expired")), None)
+                  if art is None:
+                      if sub == "normalized":
+                          download_errors.append(f"missing normalized artifact for {sid}")
+                      continue
+                  part = work / f"{sub}-{sid}"
+                  try:
+                      download_artifact(int(art["id"]), part)
+                  except Exception as exc:  # noqa: BLE001
+                      download_errors.append(f"{name}: {exc}")
+                      continue
+                  target = session_dir / sub
+                  if target.exists():
+                      shutil.rmtree(target)
+                  target.mkdir(parents=True)
+                  for fp in part.rglob("*"):
+                      if fp.is_file():
+                          rel = fp.relative_to(part)
+                          out = target / rel
+                          out.parent.mkdir(parents=True, exist_ok=True)
+                          shutil.copy2(fp, out)
+              selected.append({"session_id": sid, "utc_date": utc_date})
+
+          report = {
+              "utc_date": utc_date,
+              "manifest_artifacts_found": len(manifests),
+              "sessions_selected": selected,
+              "download_errors": download_errors,
+          }
+          Path("artifacts/l2/download_report.json").write_text(json.dumps(report, indent=2))
+          print(json.dumps(report, indent=2))
+          if not selected:
+              raise SystemExit(f"no session artifacts matched utc_date={utc_date}")
+          if any("missing normalized" in e for e in download_errors):
+              raise SystemExit("normalized artifact missing for one or more sessions")
+          PY
+      - name: Compact day
+        run: |
+          set -euo pipefail
+          UTC_DATE="${{ steps.date.outputs.utc_date }}"
+          mkdir -p data/books/daily artifacts/l2
+          python3 -m polymarket_analytics l2-compact-day \
+            --utc-date "$UTC_DATE" \
+            --sessions-dir data/books/sessions \
+            --out-dir data/books/daily \
+            2>&1 | tee artifacts/l2/compact.log
+          python3 - <<'PY'
+          import json, sys
+          from pathlib import Path
+          cov_path = Path("data/books/daily") / f"coverage_${{ steps.date.outputs.utc_date }}.json"
+          if not cov_path.exists():
+              raise SystemExit(f"missing coverage report: {cov_path}")
+          cov = json.loads(cov_path.read_text())
+          if not cov.get("n_sessions"):
+              raise SystemExit("no sessions compacted — fail closed")
+          if cov.get("estimated_storage_mb", 0) > 5000:
+              print(f"WARNING: high storage estimate {cov['estimated_storage_mb']} MB", file=sys.stderr)
+          PY
+      - name: Merge artifact index
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/l2
+          python3 - <<'PY'
+          import json
+          from datetime import datetime, timezone
+          from pathlib import Path
+          utc_date = "${{ steps.date.outputs.utc_date }}"
+          index_path = Path("artifacts/l2/l2-artifact-index.json")
+          prior = {"sessions": [], "daily": []}
+          cov = json.loads((Path("data/books/daily") / f"coverage_{utc_date}.json").read_text())
+          fragment = {
+            "utc_date": utc_date,
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+            "daily_artifact": f"l2-daily-{utc_date}",
+            "session_ids": cov.get("session_ids", []),
+            "coverage_sha256": cov.get("bundle_sha256"),
+          }
+          prior["daily"].append(fragment)
+          index_path.write_text(json.dumps(prior, indent=2))
+          PY
+      - name: Upload daily bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: l2-daily-${{ steps.date.outputs.utc_date }}
+          path: |
+            data/books/daily/l2-daily-${{ steps.date.outputs.utc_date }}.tar.gz
+            data/books/daily/coverage_${{ steps.date.outputs.utc_date }}.json
+            artifacts/l2/download_report.json
+          retention-days: 60
+      - name: Upload artifact index
+        uses: actions/upload-artifact@v4
+        with:
+          name: l2-artifact-index
+          path: artifacts/l2/l2-artifact-index.json
+          retention-days: 90
+          overwrite: true

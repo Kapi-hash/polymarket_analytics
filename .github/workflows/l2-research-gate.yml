@@ -1,0 +1,64 @@
+# Weekly / manual L2 research readiness gate (non-definitive).
+name: L2 Research Gate
+
+permissions:
+  contents: read
+  actions: write
+
+"on":
+  schedule:
+    - cron: "0 12 * * 1"
+  workflow_dispatch:
+    inputs:
+      coverage_json:
+        description: Path to coverage JSON inside repo checkout (optional)
+        type: string
+        default: ""
+
+env:
+  PYTHONUNBUFFERED: "1"
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+
+jobs:
+  readiness:
+    name: L2 readiness gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: python3 -m pip install -r requirements.txt
+      - name: Download latest daily coverage
+        if: github.event.inputs.coverage_json == ''
+        uses: actions/download-artifact@v4
+        with:
+          pattern: l2-daily-*
+          merge-multiple: true
+          path: incoming/daily
+        continue-on-error: true
+      - name: Evaluate readiness
+        id: gate
+        run: |
+          set -euo pipefail
+          COV="${{ github.event.inputs.coverage_json }}"
+          if [ -z "$COV" ]; then
+            COV=$(find incoming/daily data/books/daily -name 'coverage_*.json' 2>/dev/null | sort | tail -1 || true)
+          fi
+          if [ -z "$COV" ] || [ ! -f "$COV" ]; then
+            echo '{"ok": false, "ready": false, "error": "no coverage json found"}' | tee artifacts/l2/readiness.json
+            exit 1
+          fi
+          python3 -m polymarket_analytics l2-readiness --coverage-json "$COV" | tee artifacts/l2/readiness.json
+          READY=$(python3 -c "import json; print(json.load(open('artifacts/l2/readiness.json')).get('ready', False))")
+          echo "ready=${READY}" >> "$GITHUB_OUTPUT"
+      - name: Dispatch staged diagnostics only
+        if: steps.gate.outputs.ready == 'True'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          echo "Readiness passed — staged microstructure diagnostics only (NOT outcome_sweep)."
+          gh workflow run l2-collect.yml -f duration_seconds=300 -f n_tokens=20 -f seed=42 -f smoke=true
