@@ -6,6 +6,7 @@ import asyncio
 import gzip
 import json
 import logging
+import sys
 import time
 import uuid
 from dataclasses import asdict, dataclass, field
@@ -304,13 +305,41 @@ async def _collect_ws(
     msgs_since_snapshot = 0
     snapshot_index = 0
 
-    logger = logging.getLogger("book_collector")
+    logger = logging.getLogger(f"book_collector.{session_id}")
+    logger.handlers.clear()
+    logger.setLevel(logging.INFO)
+    logger.propagate = False
+    fmt = logging.Formatter("%(asctime)s %(levelname)s %(message)s")
+    stream = logging.StreamHandler(sys.stdout)
+    stream.setFormatter(fmt)
+    logger.addHandler(stream)
     if log_path:
         log_path.parent.mkdir(parents=True, exist_ok=True)
         handler = logging.FileHandler(log_path, encoding="utf-8")
-        handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(message)s"))
+        handler.setFormatter(fmt)
         logger.addHandler(handler)
-        logger.setLevel(logging.INFO)
+
+    heartbeat_every_sec = 30.0
+    last_heartbeat_at = time.time()
+    started = health.started_at
+    deadline = time.time() + duration_sec
+
+    def emit_heartbeat(force: bool = False) -> None:
+        nonlocal last_heartbeat_at
+        now = time.time()
+        if not force and (now - last_heartbeat_at) < heartbeat_every_sec:
+            return
+        last_heartbeat_at = now
+        elapsed = max(0.0, now - started)
+        remaining = max(0.0, deadline - now)
+        line = (
+            f"heartbeat session={session_id} elapsed_s={elapsed:.0f} remaining_s={remaining:.0f} "
+            f"raw={health.raw_rows} norm={health.normalized_rows} msgs={health.messages_received} "
+            f"emitting={len(emitting)} reconnects={health.reconnects} gaps={health.gaps_detected} "
+            f"connected={health.connected}"
+        )
+        logger.info(line)
+        print(line, flush=True)
 
     def flush_normalized() -> None:
         nonlocal flush_index
@@ -355,6 +384,18 @@ async def _collect_ws(
 
     subscribe = {"assets_ids": token_ids, "type": "market"}
     deadline = time.time() + duration_sec
+    print(
+        f"collect_start session={session_id} duration_s={duration_sec:.0f} tokens={len(token_ids)} "
+        f"compress_raw={compress_raw}",
+        flush=True,
+    )
+    logger.info(
+        "collect_start session=%s duration_s=%.0f tokens=%d",
+        session_id,
+        duration_sec,
+        len(token_ids),
+    )
+    emit_heartbeat(force=True)
 
     while time.time() < deadline:
         try:
@@ -362,10 +403,13 @@ async def _collect_ws(
                 health.connected = True
                 await ws.send(json.dumps(subscribe))
                 logger.info("connected session=%s tokens=%d", session_id, len(token_ids))
+                print(f"ws_connected session={session_id} tokens={len(token_ids)}", flush=True)
+                emit_heartbeat(force=True)
                 while time.time() < deadline:
                     try:
                         msg = await asyncio.wait_for(ws.recv(), timeout=5.0)
                     except asyncio.TimeoutError:
+                        emit_heartbeat()
                         if snapshot_dir and time.time() - last_snapshot_at >= snapshot_every_sec:
                             write_snapshot("periodic_timeout")
                         continue
@@ -376,6 +420,7 @@ async def _collect_ws(
                         payload = json.loads(msg)
                     except json.JSONDecodeError:
                         health.malformed_messages += 1
+                        emit_heartbeat()
                         continue
 
                     items = payload if isinstance(payload, list) else [payload]
@@ -416,6 +461,7 @@ async def _collect_ws(
                             norm_rows.append({**trade, "session_id": session_id, "utc_date": utc_date})
                         if len(norm_rows) >= flush_every:
                             flush_normalized()
+                    emit_heartbeat()
                     if snapshot_dir and (
                         time.time() - last_snapshot_at >= snapshot_every_sec
                         or msgs_since_snapshot >= snapshot_every_messages
@@ -434,6 +480,8 @@ async def _collect_ws(
                     }
                 )
             logger.warning("reconnect n=%d err=%s", health.reconnects, exc)
+            print(f"ws_reconnect n={health.reconnects} err={health.terminal_error}", flush=True)
+            emit_heartbeat(force=True)
             await asyncio.sleep(1.0)
 
     flush_normalized()
@@ -441,6 +489,12 @@ async def _collect_ws(
         write_snapshot("final")
     health.ended_at = time.time()
     health.emitting_tokens = sorted(emitting)
+    emit_heartbeat(force=True)
+    print(
+        f"collect_end session={session_id} raw={health.raw_rows} norm={health.normalized_rows} "
+        f"emitting={len(health.emitting_tokens)}",
+        flush=True,
+    )
 
 
 def run_collection(
@@ -548,6 +602,11 @@ def run_session_collection(
     layout = ensure_session_layout(session_dir)
     utc_date = utc_date_now()
     started_at = datetime.now(timezone.utc)
+    print(
+        f"session_prepare id={session_id} utc_date={utc_date} universe={universe_mode} "
+        f"duration_s={duration_sec:.0f}",
+        flush=True,
+    )
 
     if token_ids:
         universe = {
@@ -562,6 +621,10 @@ def run_session_collection(
         universe = build_diversified_universe(n_core=n_core, n_rotate=n_rotate, seed=seed)
 
     tokens = universe["selected_tokens"][:n_tokens]
+    print(
+        f"universe_ready mode={universe.get('mode')} selected={len(tokens)} seed={universe.get('seed')}",
+        flush=True,
+    )
     health = SessionHealth()
     gap_log = _GapReconnectLog()
     norm_dir = layout["normalized"] / f"utc_date={utc_date}"
