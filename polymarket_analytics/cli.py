@@ -967,7 +967,49 @@ def build_parser() -> argparse.ArgumentParser:
     books_p.add_argument("--n-tokens", type=int, default=3)
     books_p.add_argument("--token-id", action="append", default=None)
     books_p.add_argument("--data-root", type=Path, default=ROOT / "data")
+    books_p.add_argument(
+        "--universe",
+        choices=("diversified", "top"),
+        default=None,
+        help="Token universe when using --full-session (default: diversified)",
+    )
+    books_p.add_argument("--seed", type=int, default=42)
+    books_p.add_argument("--core", type=int, default=60, help="Core tokens for diversified universe")
+    books_p.add_argument("--rotate", type=int, default=40, help="Rotating tokens for diversified universe")
+    books_p.add_argument("--session-id", type=str, default=None, help="Optional session id")
+    books_p.add_argument(
+        "--full-session",
+        action="store_true",
+        help="Write full session layout under data/books/sessions/ (continuous L2)",
+    )
+    books_p.add_argument(
+        "--legacy-runs",
+        action="store_true",
+        help="Force data/books/runs/ layout (overnight-compatible)",
+    )
     books_p.set_defaults(func=_cmd_collect_books)
+
+    compact_p = sub.add_parser("l2-compact-day", help="Compact L2 sessions for one UTC date")
+    compact_p.add_argument("--utc-date", type=str, required=True, help="YYYY-MM-DD")
+    compact_p.add_argument(
+        "--sessions-dir",
+        type=Path,
+        default=ROOT / "data" / "books" / "sessions",
+    )
+    compact_p.add_argument("--out-dir", type=Path, default=ROOT / "data" / "books" / "daily")
+    compact_p.set_defaults(func=_cmd_l2_compact_day)
+
+    readiness_p = sub.add_parser("l2-readiness", help="Evaluate L2 coverage readiness (non-definitive)")
+    readiness_p.add_argument("--coverage-json", type=Path, required=True)
+    readiness_p.set_defaults(func=_cmd_l2_readiness)
+
+    diag_p = sub.add_parser("l2-diagnostics", help="Run non-definitive L2 session diagnostics")
+    diag_p.add_argument("--session-dir", type=Path, required=True)
+    diag_p.set_defaults(func=_cmd_l2_diagnostics)
+
+    watchdog_p = sub.add_parser("l2-watchdog-check", help="Print JSON watchdog status for CI")
+    watchdog_p.add_argument("--runs-json", type=Path, default=None, help="Workflow runs JSON file")
+    watchdog_p.set_defaults(func=_cmd_l2_watchdog_check)
 
     backfill_p = sub.add_parser("backfill-year", help="Resumable year-sharded Gamma/Data API backfill")
     backfill_p.add_argument("--year", type=int, required=True)
@@ -1056,27 +1098,88 @@ def _cmd_sweep_outcomes(args: argparse.Namespace) -> int:
 
 
 def _cmd_collect_books(args: argparse.Namespace) -> int:
-    from polymarket_analytics.collectors.book_collector import discover_active_token_ids, run_collection
+    from polymarket_analytics.collectors.book_collector import (
+        discover_active_token_ids,
+        run_collection,
+        run_session_collection,
+    )
 
     token_ids = [str(t) for t in (args.token_id or [])]
-    if not token_ids:
-        try:
-            token_ids = discover_active_token_ids(args.n_tokens)
-        except Exception as exc:  # noqa: BLE001
-            print(json.dumps({"ok": False, "error": f"token discovery failed: {exc}"}))
-            return 1
-    if not token_ids:
-        print(json.dumps({"ok": False, "error": "no token ids"}))
-        return 1
+    n_tokens = int(args.n_tokens)
 
-    report = run_collection(
-        token_ids=token_ids[: args.n_tokens],
-        duration_sec=args.duration,
-        max_tokens=args.n_tokens,
-        data_root=Path(args.data_root),
-    )
+    use_full_session = bool(args.full_session) and not args.legacy_runs
+
+    if use_full_session:
+        universe_mode = args.universe or "diversified"
+        report = run_session_collection(
+            duration_sec=args.duration,
+            universe_mode=universe_mode,
+            seed=args.seed,
+            n_core=args.core,
+            n_rotate=args.rotate,
+            n_tokens=n_tokens,
+            data_root=Path(args.data_root),
+            session_id=args.session_id,
+            token_ids=token_ids or None,
+        )
+    else:
+        if not token_ids:
+            try:
+                token_ids = discover_active_token_ids(n_tokens)
+            except Exception as exc:  # noqa: BLE001
+                print(json.dumps({"ok": False, "error": f"token discovery failed: {exc}"}))
+                return 1
+        if not token_ids:
+            print(json.dumps({"ok": False, "error": "no token ids"}))
+            return 1
+        report = run_collection(
+            token_ids=token_ids[:n_tokens],
+            duration_sec=args.duration,
+            max_tokens=n_tokens,
+            data_root=Path(args.data_root),
+            session_id=args.session_id,
+        )
+
     print(json.dumps(report, indent=2, default=str))
     return 0 if report.get("ok") else 1
+
+
+def _cmd_l2_compact_day(args: argparse.Namespace) -> int:
+    from polymarket_analytics.l2.compact import compact_day
+
+    result = compact_day(args.utc_date, args.sessions_dir, args.out_dir)
+    if result.get("storage_warning"):
+        print(json.dumps({"warning": result["storage_warning_message"]}, indent=2), file=sys.stderr)
+    print(json.dumps(result, indent=2, default=str))
+    return 0 if result.get("ok") else 1
+
+
+def _cmd_l2_readiness(args: argparse.Namespace) -> int:
+    from polymarket_analytics.l2.readiness import evaluate_readiness
+
+    result = evaluate_readiness(args.coverage_json)
+    print(json.dumps(result, indent=2, default=str))
+    return 0 if result.get("ready") else 1
+
+
+def _cmd_l2_diagnostics(args: argparse.Namespace) -> int:
+    from polymarket_analytics.l2.diagnostics import run_session_diagnostics
+
+    result = run_session_diagnostics(args.session_dir)
+    print(json.dumps(result, indent=2, default=str))
+    return 0 if result.get("ok") else 1
+
+
+def _cmd_l2_watchdog_check(args: argparse.Namespace) -> int:
+    from polymarket_analytics.l2.watchdog import load_redispatch_state, watchdog_check
+
+    runs: list[dict] = []
+    if args.runs_json and Path(args.runs_json).exists():
+        runs = json.loads(Path(args.runs_json).read_text(encoding="utf-8"))
+    state_path = ROOT / "data" / "books" / "watchdog_redispatch.json"
+    result = watchdog_check(runs=runs, redispatch_state=load_redispatch_state(state_path))
+    print(json.dumps(result, indent=2, default=str))
+    return 0 if result.get("ok") else 1
 
 
 def _cmd_backfill_year(args: argparse.Namespace) -> int:

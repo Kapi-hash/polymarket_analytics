@@ -161,6 +161,7 @@ def test_l2_schema_preserves_large_asset_ids(tmp_path: Path) -> None:
             "record_type": "book",
             "raw_keys": ["asset_id"],
             "session_id": "abc",
+            "utc_date": "2026-01-01",
             "parse_ok": True,
         },
         {
@@ -176,6 +177,7 @@ def test_l2_schema_preserves_large_asset_ids(tmp_path: Path) -> None:
             "record_type": "trade",
             "raw_keys": ["price"],
             "session_id": "abc",
+            "utc_date": "2026-01-01",
             "parse_ok": True,
         },
     ]

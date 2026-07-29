@@ -1,0 +1,134 @@
+# Hourly watchdog for L2 collection health; opens issue and may redispatch.
+name: L2 Watchdog
+
+concurrency:
+  group: l2-watchdog
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  actions: write
+  issues: write
+
+"on":
+  schedule:
+    - cron: "15 * * * *"
+  workflow_dispatch: {}
+
+env:
+  PYTHONUNBUFFERED: "1"
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+
+jobs:
+  watchdog:
+    name: L2 collection watchdog
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: python3 -m pip install -r requirements.txt
+      - name: Evaluate collection health
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/l2
+          python3 - <<'PY'
+          import json, os, subprocess, sys
+          from datetime import datetime, timezone
+          from pathlib import Path
+
+          repo = os.environ["GITHUB_REPOSITORY"]
+          wf = subprocess.check_output(
+              ["gh", "api", f"repos/{repo}/actions/workflows/l2-collect.yml"],
+              text=True,
+          )
+          wf_id = json.loads(wf)["id"]
+          runs_raw = subprocess.check_output(
+              [
+                  "gh", "api",
+                  f"repos/{repo}/actions/workflows/{wf_id}/runs?per_page=20",
+              ],
+              text=True,
+          )
+          payload = json.loads(runs_raw)
+          runs = []
+          for r in payload.get("workflow_runs", []):
+              runs.append({
+                  "id": r.get("id"),
+                  "status": r.get("status"),
+                  "conclusion": r.get("conclusion"),
+                  "created_at": r.get("created_at"),
+                  "duration_seconds": 18000,
+              })
+          Path("artifacts/l2/runs.json").write_text(json.dumps(runs, indent=2))
+          PY
+          python3 -m polymarket_analytics l2-watchdog-check \
+            --runs-json artifacts/l2/runs.json \
+            | tee artifacts/l2/watchdog.json
+          python3 - <<'PY'
+          import json, sys
+          from pathlib import Path
+          rep = json.loads(Path("artifacts/l2/watchdog.json").read_text())
+          if not rep.get("ok", False):
+              sys.exit(2)
+          PY
+      - name: Redispatch replacement (limited)
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          SHOULD=$(python3 -c "import json; print(json.load(open('artifacts/l2/watchdog.json')).get('should_dispatch_replacement', False))")
+          if [ "$SHOULD" != "True" ] && [ "$SHOULD" != "true" ]; then
+            echo "Redispatch not recommended"
+            exit 0
+          fi
+          gh workflow run l2-collect.yml -f duration_seconds=18000 -f n_tokens=100 -f seed=42 -f smoke=false
+      - name: Open or update watchdog issue
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          TITLE="[L2 Watchdog] Collection unhealthy"
+          BODY=$(python3 - <<'PY'
+          import json
+          from pathlib import Path
+          rep = json.loads(Path("artifacts/l2/watchdog.json").read_text())
+          runs = json.loads(Path("artifacts/l2/runs.json").read_text()) if Path("artifacts/l2/runs.json").exists() else []
+          lines = [
+              "## L2 collection unhealthy",
+              "",
+              f"Checked at: {rep.get('checked_at')}",
+              "",
+              "### Issues",
+          ]
+          for issue in rep.get("issues") or []:
+              lines.append(f"- {issue}")
+          lines.extend(["", "### Recent runs", "```json", json.dumps(runs[:5], indent=2), "```"])
+          print("\n".join(lines))
+          PY
+          )
+          EXISTING=$(gh issue list --search "$TITLE in:title" --state open --json number --jq '.[0].number // empty')
+          if [ -n "$EXISTING" ]; then
+            gh issue comment "$EXISTING" --body "$BODY"
+          else
+            gh issue create --title "$TITLE" --body "$BODY"
+          fi
+      - name: Close watchdog issue when recovered
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          TITLE="[L2 Watchdog] Collection unhealthy"
+          EXISTING=$(gh issue list --search "$TITLE in:title" --state open --json number --jq '.[0].number // empty')
+          if [ -n "$EXISTING" ]; then
+            gh issue close "$EXISTING" --comment "L2 collection recovered."
+          fi
