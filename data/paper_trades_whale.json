@@ -1,11 +1,11 @@
 {
-  "updated_at": "2026-07-28T18:53:35.695415+00:00",
+  "updated_at": "2026-07-29T00:19:15.121663+00:00",
   "bankroll_initial": 10000.0,
   "cash": 9705.882352859277,
   "equity": 9988.688020660991,
   "realized_pnl": 0.0,
   "unrealized_pnl": -11.311979339008554,
-  "ticks_seen": 227,
+  "ticks_seen": 298,
   "signals_fired": 1,
   "fills": 1,
   "resolutions": 0,
@@ -37,11 +37,11 @@
   ],
   "open_positions": [
     {
-      "position_id": "baf642ed",
+      "position_id": "f2db05ba",
       "token_id": "90435811253665578014957380826505992530054077692143838383981805324273750424057",
       "condition_id": "0x32b09f6390252b37d674501527e709016d55581b2c1e544bd4b8167f5f732f4c",
       "strategy_label": "bucket=0.40-0.50 AND whale>3 AND side=BUY",
-      "entry_ts": 1785261997.292,
+      "entry_ts": 1785269988.124,
       "entry_price_raw": 0.49,
       "entry_price_fill": 0.5025,
       "shares": 565.6113356034291,
@@ -64,12 +64,12 @@
   "closed_positions": [],
   "recent_signals": [
     {
-      "ts": 1785261997.292,
+      "ts": 1785269988.124,
       "token_id": "90435811253665578014957380826505992530054077692143838383981805324273750424057",
       "condition_id": "0x32b09f6390252b37d674501527e709016d55581b2c1e544bd4b8167f5f732f4c",
       "price": 0.49,
-      "whale_ratio": 14.866479925303455,
-      "momentum_1h": -0.01922997825264978,
+      "whale_ratio": 35.323529411764696,
+      "momentum_1h": 0.0,
       "price_bucket": "0.40-0.50",
       "strategy_label": "bucket=0.40-0.50 AND whale>3 AND side=BUY",
       "oos_ev_pct": 10.0,
