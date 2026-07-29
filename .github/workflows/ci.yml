@@ -1,0 +1,45 @@
+# Pull-request / push CI — unit tests and workflow YAML parse.
+name: CI
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+"on":
+  pull_request:
+  push:
+    branches: [main]
+
+env:
+  PYTHONUNBUFFERED: "1"
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+
+jobs:
+  test:
+    name: Pytest + workflow lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install dependencies
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install -r requirements.txt
+      - name: Run tests
+        run: python3 -m pytest -q --tb=line
+      - name: Validate workflow YAML
+        run: |
+          python3 - <<'PY'
+          import pathlib, yaml
+          root = pathlib.Path(".github/workflows")
+          for path in sorted(root.glob("*.yml")):
+              yaml.safe_load(path.read_text(encoding="utf-8"))
+              print(f"ok {path}")
+          PY
