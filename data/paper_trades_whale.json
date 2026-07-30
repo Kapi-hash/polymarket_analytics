@@ -1,13 +1,13 @@
 {
-  "updated_at": "2026-07-30T00:06:22.971019+00:00",
+  "updated_at": "2026-07-30T06:57:43.374491+00:00",
   "bankroll_initial": 10000.0,
-  "cash": 9705.882352859277,
-  "equity": 9988.688020660991,
+  "cash": 10000.0,
+  "equity": 10000.0,
   "realized_pnl": 0.0,
-  "unrealized_pnl": -11.311979339008554,
-  "ticks_seen": 385,
-  "signals_fired": 1,
-  "fills": 1,
+  "unrealized_pnl": 0,
+  "ticks_seen": 443,
+  "signals_fired": 0,
+  "fills": 0,
   "resolutions": 0,
   "risk_rejects": 0,
   "peak_equity": 10000.0,
@@ -35,49 +35,9 @@
       }
     }
   ],
-  "open_positions": [
-    {
-      "position_id": "8f82aac8",
-      "token_id": "17516427576383382756368467656206258206490015951115433065318503962238754362428",
-      "condition_id": "0x7b49b9bacb5f435bc10f3b100ff59e2fdd346f7f92a9001881bc9825a0af0f11",
-      "strategy_label": "bucket=0.40-0.50 AND whale>3 AND side=BUY",
-      "entry_ts": 1785364774.83,
-      "entry_price_raw": 0.49,
-      "entry_price_fill": 0.5025,
-      "shares": 565.6113356034291,
-      "notional": 284.2196961407231,
-      "fees": 9.897951,
-      "mark_price": 0.5,
-      "fee_rate": 0.07,
-      "entry_ev_pct_gross": 10.0,
-      "entry_ev_pct_net": 6.517499999999999,
-      "status": "open",
-      "exit_reason": null,
-      "exit_ts": null,
-      "exit_price": null,
-      "exit_fees": 0.0,
-      "realized_pnl": null,
-      "win": null,
-      "unrealized_pnl": -11.311979339008554
-    }
-  ],
+  "open_positions": [],
   "closed_positions": [],
-  "recent_signals": [
-    {
-      "ts": 1785364774.83,
-      "token_id": "17516427576383382756368467656206258206490015951115433065318503962238754362428",
-      "condition_id": "0x7b49b9bacb5f435bc10f3b100ff59e2fdd346f7f92a9001881bc9825a0af0f11",
-      "price": 0.49,
-      "whale_ratio": 35.76143790849673,
-      "momentum_1h": -0.010198554525042848,
-      "price_bucket": "0.40-0.50",
-      "strategy_label": "bucket=0.40-0.50 AND whale>3 AND side=BUY",
-      "oos_ev_pct": 10.0,
-      "oos_win_rate": 0.55,
-      "fee_estimate": 0.03482500000000001,
-      "net_ev_pct": 6.517499999999999
-    }
-  ],
+  "recent_signals": [],
   "profile": "profile_whale_midbucket",
-  "max_drawdown_pct": 0.16968092695042286
+  "max_drawdown_pct": 0.0
 }
