@@ -1,13 +1,13 @@
 {
-  "updated_at": "2026-07-31T00:18:08.969305+00:00",
+  "updated_at": "2026-07-31T07:22:34.830705+00:00",
   "bankroll_initial": 10000.0,
-  "cash": 9741.035856882752,
-  "equity": 9990.023123666084,
+  "cash": 10000.0,
+  "equity": 10000.0,
   "realized_pnl": 0.0,
-  "unrealized_pnl": -9.976876333916627,
-  "ticks_seen": 422,
-  "signals_fired": 1,
-  "fills": 1,
+  "unrealized_pnl": 0,
+  "ticks_seen": 444,
+  "signals_fired": 0,
+  "fills": 0,
   "resolutions": 0,
   "risk_rejects": 0,
   "peak_equity": 10000.0,
@@ -35,49 +35,9 @@
       }
     }
   ],
-  "open_positions": [
-    {
-      "position_id": "d4824bfa",
-      "token_id": "105267568073659068217311993901927962476298440625043565106676088842803600775810",
-      "condition_id": "0xbb57ccf5853a85487bc3d83d04d669310d28c6c810758953b9d9b91d1aee89d2",
-      "strategy_label": "bucket=0.40-0.50 AND whale>3 AND side=BUY",
-      "entry_ts": 1785451257.744,
-      "entry_price_raw": 0.498,
-      "entry_price_fill": 0.5014949999999999,
-      "shares": 498.97247852370987,
-      "notional": 250.23220311724785,
-      "fees": 8.73194,
-      "mark_price": 0.499,
-      "fee_rate": 0.07,
-      "entry_ev_pct_gross": 10.0,
-      "entry_ev_pct_net": 6.510464999999998,
-      "status": "open",
-      "exit_reason": null,
-      "exit_ts": null,
-      "exit_price": null,
-      "exit_fees": 0.0,
-      "realized_pnl": null,
-      "win": null,
-      "unrealized_pnl": -9.976876333916627
-    }
-  ],
+  "open_positions": [],
   "closed_positions": [],
-  "recent_signals": [
-    {
-      "ts": 1785451257.744,
-      "token_id": "105267568073659068217311993901927962476298440625043565106676088842803600775810",
-      "condition_id": "0xbb57ccf5853a85487bc3d83d04d669310d28c6c810758953b9d9b91d1aee89d2",
-      "price": 0.498,
-      "whale_ratio": 21.513274459662977,
-      "momentum_1h": -0.0011139634075411154,
-      "price_bucket": "0.40-0.50",
-      "strategy_label": "bucket=0.40-0.50 AND whale>3 AND side=BUY",
-      "oos_ev_pct": 10.0,
-      "oos_win_rate": 0.55,
-      "fee_estimate": 0.03489535000000001,
-      "net_ev_pct": 6.510464999999998
-    }
-  ],
+  "recent_signals": [],
   "profile": "profile_whale_midbucket",
-  "max_drawdown_pct": 0.10475848812440745
+  "max_drawdown_pct": 0.0
 }
