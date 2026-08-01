@@ -1,13 +1,13 @@
 {
-  "updated_at": "2026-08-01T00:17:12.094378+00:00",
+  "updated_at": "2026-08-01T07:13:00.939258+00:00",
   "bankroll_initial": 10000.0,
   "cash": 10000.0,
   "equity": 10000.0,
   "realized_pnl": 0.0,
   "unrealized_pnl": 0,
-  "ticks_seen": 1062,
-  "signals_fired": 1,
-  "fills": 1,
+  "ticks_seen": 1257,
+  "signals_fired": 0,
+  "fills": 0,
   "min_ev_pct": 5.0,
   "config": {
     "bankroll": 10000.0,
@@ -44,49 +44,8 @@
     "confluence_book_min": 2.5
   },
   "open_positions": [],
-  "closed_positions": [
-    {
-      "position_id": "9daed742",
-      "strategy": "momentum",
-      "token_id": "105267568073659068217311993901927962476298440625043565106676088842803600775810",
-      "condition_id": "0xbb57ccf5853a85487bc3d83d04d669310d28c6c810758953b9d9b91d1aee89d2",
-      "entry_ts": 1785535388.122,
-      "entry_price": 0.499,
-      "shares": 1002.0040080160321,
-      "notional": 500.0,
-      "target_price": 0.5988,
-      "stop_price": 0.4491,
-      "trailing_stop": 0.499,
-      "mark_price": 0.499,
-      "status": "stop_loss",
-      "exit_ts": 1785538660.298,
-      "exit_price": 0.499,
-      "exit_reason": "stop_loss",
-      "realized_pnl": 0.0,
-      "reason": "hurst=0.56 ema_cross=True move=+0.000 whale=0.787437305258259",
-      "unrealized_pnl": 0.0,
-      "return_pct": 0.0
-    }
-  ],
-  "recent_signals": [
-    {
-      "strategy": "momentum",
-      "token_id": "105267568073659068217311993901927962476298440625043565106676088842803600775810",
-      "condition_id": "0xbb57ccf5853a85487bc3d83d04d669310d28c6c810758953b9d9b91d1aee89d2",
-      "ts": 1785535388.122,
-      "entry_price": 0.499,
-      "target_price": 0.5988,
-      "stop_price": 0.4491,
-      "reason": "hurst=0.56 ema_cross=True move=+0.000 whale=0.787437305258259",
-      "indicators": {
-        "hurst": 0.5582202989847689,
-        "ema_fast": 0.4989561042524006,
-        "ema_slow": 0.4989422592750814,
-        "move": 0.0,
-        "whale_ratio": 0.787437305258259
-      }
-    }
-  ],
+  "closed_positions": [],
+  "recent_signals": [],
   "profile": "profile_momentum_drift",
   "max_drawdown_pct": 0.0,
   "peak_equity": 10000.0
