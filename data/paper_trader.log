@@ -3,8 +3,8 @@
 ================================================================================================
      profile |       PnL($) |         ROI% |         Win% |        fills |      fees($) |       maxDD% |       equity
 ------------ | ------------ | ------------ | ------------ | ------------ | ------------ | ------------ | ------------
-profile_rsi_ |       +41.49 |        +0.41 |         66.7 |            7 |       0.0000 |         0.11 |     10041.49
-profile_swin |       +31.46 |        +0.31 |         60.0 |            6 |       0.0000 |         0.11 |     10031.46
+profile_rsi_ |       +31.45 |        +0.31 |        100.0 |            4 |       0.0000 |         0.00 |     10031.45
+profile_swin |       +31.45 |        +0.31 |        100.0 |            4 |       0.0000 |         0.00 |     10031.45
 profile_whal |        +0.00 |        +0.00 |          0.0 |            0 |       0.0000 |         0.00 |     10000.00
 profile_mome |        +0.00 |        +0.00 |          0.0 |            1 |       0.0000 |         0.00 |     10000.00
 ================================================================================================
@@ -35,18 +35,18 @@ profile_mome |        +0.00 |        +0.00 |          0.0 |            1 |      
       "description": "RSI < 25 on >$50k liq \u2192 20-EMA target",
       "kind": "swing",
       "journal": "data/paper_trades_rsi.json",
-      "realized_pnl": 31.251777183182753,
-      "unrealized_pnl": 10.235971201207342,
-      "total_pnl": 41.487748384390095,
-      "roi_pct": 0.414877483843901,
-      "win_rate_pct": 66.66666666666667,
-      "fills": 7,
-      "n_closed": 6,
+      "realized_pnl": 31.446066357265806,
+      "unrealized_pnl": 0,
+      "total_pnl": 31.446066357265806,
+      "roi_pct": 0.31446066357265806,
+      "win_rate_pct": 100.0,
+      "fills": 4,
+      "n_closed": 4,
       "fees_paid": 0.0,
-      "max_drawdown_pct": 0.10976735003067643,
-      "equity": 10041.487748384392,
+      "max_drawdown_pct": 0.0,
+      "equity": 10031.446066357266,
       "bankroll": 10000.0,
-      "cash": 9529.689188324026
+      "cash": 10031.446066357266
     },
     {
       "profile": "profile_momentum_drift",
@@ -71,18 +71,18 @@ profile_mome |        +0.00 |        +0.00 |          0.0 |            1 |      
       "description": "2+ of book imbalance / EMA cross / RSI oversold",
       "kind": "swing",
       "journal": "data/paper_trades_swing.json",
-      "realized_pnl": 21.230546636546194,
-      "unrealized_pnl": 10.225745455751587,
-      "total_pnl": 31.45629209229778,
-      "roi_pct": 0.31456292092297783,
-      "win_rate_pct": 60.0,
-      "fills": 6,
-      "n_closed": 5,
+      "realized_pnl": 31.446066357265806,
+      "unrealized_pnl": 0,
+      "total_pnl": 31.446066357265806,
+      "roi_pct": 0.31446066357265806,
+      "win_rate_pct": 100.0,
+      "fills": 4,
+      "n_closed": 4,
       "fees_paid": 0.0,
-      "max_drawdown_pct": 0.10976735003067643,
-      "equity": 10031.456292092298,
+      "max_drawdown_pct": 0.0,
+      "equity": 10031.446066357266,
       "bankroll": 10000.0,
-      "cash": 9520.16901930472
+      "cash": 10031.446066357266
     }
   ]
 }
