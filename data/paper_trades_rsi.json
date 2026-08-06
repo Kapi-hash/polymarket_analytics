@@ -1,13 +1,13 @@
 {
-  "updated_at": "2026-08-06T00:23:58.704425+00:00",
+  "updated_at": "2026-08-06T07:06:24.079890+00:00",
   "bankroll_initial": 10000.0,
   "cash": 10000.0,
   "equity": 10000.0,
   "realized_pnl": 0.0,
   "unrealized_pnl": 0,
-  "ticks_seen": 129,
-  "signals_fired": 0,
-  "fills": 0,
+  "ticks_seen": 102,
+  "signals_fired": 1,
+  "fills": 1,
   "min_ev_pct": 5.0,
   "config": {
     "bankroll": 10000.0,
@@ -44,9 +44,49 @@
     "confluence_book_min": 2.5
   },
   "open_positions": [],
-  "closed_positions": [],
-  "recent_signals": [],
+  "closed_positions": [
+    {
+      "position_id": "fe92ebf5",
+      "strategy": "mean_reversion",
+      "token_id": "65176072261324737856085688071627118509549293922582857186996392180609764586527",
+      "condition_id": "0xe6bcc2f1dd025ce5e1833190f7c60a71171c94f805df55b9ab0ded695ec93565",
+      "entry_ts": 1785988175.422,
+      "entry_price": 0.852,
+      "shares": 586.8544600938967,
+      "notional": 500.0,
+      "target_price": 0.99,
+      "stop_price": 0.7668,
+      "trailing_stop": 0.8527142857142856,
+      "mark_price": 0.852,
+      "status": "stop_loss",
+      "exit_ts": 1785990280.561,
+      "exit_price": 0.852,
+      "exit_reason": "stop_loss",
+      "realized_pnl": 0.0,
+      "reason": "price below lower Bollinger",
+      "unrealized_pnl": 0.0,
+      "return_pct": 0.0
+    }
+  ],
+  "recent_signals": [
+    {
+      "strategy": "mean_reversion",
+      "token_id": "65176072261324737856085688071627118509549293922582857186996392180609764586527",
+      "condition_id": "0xe6bcc2f1dd025ce5e1833190f7c60a71171c94f805df55b9ab0ded695ec93565",
+      "ts": 1785988175.422,
+      "entry_price": 0.852,
+      "target_price": 0.99,
+      "stop_price": 0.7668,
+      "reason": "price below lower Bollinger",
+      "indicators": {
+        "rsi": 33.33333333333333,
+        "bb_mid": 0.8529,
+        "bb_lower": 0.85215,
+        "liquidity_usd": 50000.0
+      }
+    }
+  ],
   "profile": "profile_rsi_mean_reversion",
-  "max_drawdown_pct": 0.0,
-  "peak_equity": 10000.0
+  "max_drawdown_pct": 0.005868200222996647,
+  "peak_equity": 10000.586854460094
 }
