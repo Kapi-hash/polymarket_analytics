@@ -4,9 +4,9 @@
      profile |       PnL($) |         ROI% |         Win% |        fills |      fees($) |       maxDD% |       equity
 ------------ | ------------ | ------------ | ------------ | ------------ | ------------ | ------------ | ------------
 profile_whal |        +0.00 |        +0.00 |          0.0 |            0 |       0.0000 |         0.00 |     10000.00
-profile_rsi_ |        +0.00 |        +0.00 |          0.0 |            1 |       0.0000 |         0.00 |     10000.00
+profile_rsi_ |        +0.00 |        +0.00 |          0.0 |            0 |       0.0000 |         0.00 |     10000.00
+profile_mome |        +0.00 |        +0.00 |          0.0 |            0 |       0.0000 |         0.00 |     10000.00
 profile_swin |        +0.00 |        +0.00 |          0.0 |            0 |       0.0000 |         0.00 |     10000.00
-profile_mome |        -4.89 |        -0.05 |          0.0 |            1 |       0.0000 |         0.05 |      9995.11
 ================================================================================================
 {
   "ok": true,
@@ -40,8 +40,8 @@ profile_mome |        -4.89 |        -0.05 |          0.0 |            1 |      
       "total_pnl": 0.0,
       "roi_pct": 0.0,
       "win_rate_pct": 0.0,
-      "fills": 1,
-      "n_closed": 1,
+      "fills": 0,
+      "n_closed": 0,
       "fees_paid": 0.0,
       "max_drawdown_pct": 0.0,
       "equity": 10000.0,
@@ -53,18 +53,18 @@ profile_mome |        -4.89 |        -0.05 |          0.0 |            1 |      
       "description": "Hurst > 0.55 + 5/20 EMA cross on heavy volume",
       "kind": "swing",
       "journal": "data/paper_trades_momentum.json",
-      "realized_pnl": -4.8899755501221875,
+      "realized_pnl": 0.0,
       "unrealized_pnl": 0,
-      "total_pnl": -4.8899755501221875,
-      "roi_pct": -0.04889975550122187,
+      "total_pnl": 0.0,
+      "roi_pct": 0.0,
       "win_rate_pct": 0.0,
-      "fills": 1,
-      "n_closed": 1,
+      "fills": 0,
+      "n_closed": 0,
       "fees_paid": 0.0,
-      "max_drawdown_pct": 0.04889975550122472,
-      "equity": 9995.110024449878,
+      "max_drawdown_pct": 0.0,
+      "equity": 10000.0,
       "bankroll": 10000.0,
-      "cash": 9995.110024449878
+      "cash": 10000.0
     },
     {
       "profile": "profile_swing_confluence",

@@ -1,13 +1,13 @@
 {
-  "updated_at": "2026-08-12T18:00:14.928875+00:00",
+  "updated_at": "2026-08-13T00:10:36.724151+00:00",
   "bankroll_initial": 10000.0,
   "cash": 10000.0,
   "equity": 10000.0,
   "realized_pnl": 0.0,
   "unrealized_pnl": 0,
-  "ticks_seen": 113,
-  "signals_fired": 1,
-  "fills": 1,
+  "ticks_seen": 328,
+  "signals_fired": 0,
+  "fills": 0,
   "min_ev_pct": 5.0,
   "config": {
     "bankroll": 10000.0,
@@ -44,48 +44,8 @@
     "confluence_book_min": 2.5
   },
   "open_positions": [],
-  "closed_positions": [
-    {
-      "position_id": "3a8ca9a3",
-      "strategy": "mean_reversion",
-      "token_id": "65176072261324737856085688071627118509549293922582857186996392180609764586527",
-      "condition_id": "0xe6bcc2f1dd025ce5e1833190f7c60a71171c94f805df55b9ab0ded695ec93565",
-      "entry_ts": 1786556058.608,
-      "entry_price": 0.809,
-      "shares": 618.0469715698392,
-      "notional": 499.99999999999994,
-      "target_price": 0.9708,
-      "stop_price": 0.7281000000000001,
-      "trailing_stop": 0.809,
-      "mark_price": 0.809,
-      "status": "stop_loss",
-      "exit_ts": 1786556074.126,
-      "exit_price": 0.809,
-      "exit_reason": "stop_loss",
-      "realized_pnl": 0.0,
-      "reason": "oversold rsi=15.4",
-      "unrealized_pnl": 0.0,
-      "return_pct": 0.0
-    }
-  ],
-  "recent_signals": [
-    {
-      "strategy": "mean_reversion",
-      "token_id": "65176072261324737856085688071627118509549293922582857186996392180609764586527",
-      "condition_id": "0xe6bcc2f1dd025ce5e1833190f7c60a71171c94f805df55b9ab0ded695ec93565",
-      "ts": 1786556058.608,
-      "entry_price": 0.809,
-      "target_price": 0.9708,
-      "stop_price": 0.7281000000000001,
-      "reason": "oversold rsi=15.4",
-      "indicators": {
-        "rsi": 15.384615384615458,
-        "bb_mid": 0.8122499999999999,
-        "bb_lower": 0.7965203504489133,
-        "liquidity_usd": 50000.0
-      }
-    }
-  ],
+  "closed_positions": [],
+  "recent_signals": [],
   "profile": "profile_rsi_mean_reversion",
   "max_drawdown_pct": 0.0,
   "peak_equity": 10000.0
