@@ -1,13 +1,13 @@
 {
-  "updated_at": "2026-08-17T17:36:44.895224+00:00",
+  "updated_at": "2026-08-17T23:32:04.774072+00:00",
   "bankroll_initial": 10000.0,
-  "cash": 10000.0,
-  "equity": 10000.0,
-  "realized_pnl": 0.0,
+  "cash": 9838.38383838384,
+  "equity": 9838.38383838384,
+  "realized_pnl": -161.6161616161616,
   "unrealized_pnl": 0,
-  "ticks_seen": 97,
-  "signals_fired": 0,
-  "fills": 0,
+  "ticks_seen": 453,
+  "signals_fired": 1,
+  "fills": 1,
   "min_ev_pct": 5.0,
   "config": {
     "bankroll": 10000.0,
@@ -44,9 +44,50 @@
     "confluence_book_min": 2.5
   },
   "open_positions": [],
-  "closed_positions": [],
-  "recent_signals": [],
+  "closed_positions": [
+    {
+      "position_id": "b2a8c955",
+      "strategy": "momentum",
+      "token_id": "90227223115596293448966158151606153337847900483048338623540402385929720677904",
+      "condition_id": "0x61d9486c0f7e14ed98f3b177b6adcb3cd45646c92e8bbfbf209789b86472d4b6",
+      "entry_ts": 1786993756.451,
+      "entry_price": 0.099,
+      "shares": 5050.50505050505,
+      "notional": 500.0,
+      "target_price": 0.15118210193043463,
+      "stop_price": 0.08692857142857144,
+      "trailing_stop": 0.08692857142857144,
+      "mark_price": 0.067,
+      "status": "stop_loss",
+      "exit_ts": 1786993986.722,
+      "exit_price": 0.067,
+      "exit_reason": "stop_loss",
+      "realized_pnl": -161.6161616161616,
+      "reason": "hurst=0.74 ema_cross=False move=+0.082 whale=13.366712924359737",
+      "unrealized_pnl": 0.0,
+      "return_pct": -0.3232323232323232
+    }
+  ],
+  "recent_signals": [
+    {
+      "strategy": "momentum",
+      "token_id": "90227223115596293448966158151606153337847900483048338623540402385929720677904",
+      "condition_id": "0x61d9486c0f7e14ed98f3b177b6adcb3cd45646c92e8bbfbf209789b86472d4b6",
+      "ts": 1786993756.451,
+      "entry_price": 0.099,
+      "target_price": 0.15118210193043463,
+      "stop_price": 0.08692857142857144,
+      "reason": "hurst=0.74 ema_cross=False move=+0.082 whale=13.366712924359737",
+      "indicators": {
+        "hurst": 0.7391626520435424,
+        "ema_fast": 0.08803763694851979,
+        "ema_slow": 0.05648562790195444,
+        "move": 0.082,
+        "whale_ratio": 13.366712924359737
+      }
+    }
+  ],
   "profile": "profile_momentum_drift",
-  "max_drawdown_pct": 0.0,
-  "peak_equity": 10000.0
+  "max_drawdown_pct": 1.7154389505549914,
+  "peak_equity": 10010.10101010101
 }
