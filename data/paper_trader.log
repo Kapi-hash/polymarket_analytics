@@ -5,8 +5,8 @@
 ------------ | ------------ | ------------ | ------------ | ------------ | ------------ | ------------ | ------------
 profile_whal |        +0.00 |        +0.00 |          0.0 |            0 |       0.0000 |         0.00 |     10000.00
 profile_rsi_ |        +0.00 |        +0.00 |          0.0 |            0 |       0.0000 |         0.00 |     10000.00
+profile_mome |        +0.00 |        +0.00 |          0.0 |            0 |       0.0000 |         0.00 |     10000.00
 profile_swin |        +0.00 |        +0.00 |          0.0 |            0 |       0.0000 |         0.00 |     10000.00
-profile_mome |      -161.62 |        -1.62 |          0.0 |            1 |       0.0000 |         1.72 |      9838.38
 ================================================================================================
 {
   "ok": true,
@@ -53,18 +53,18 @@ profile_mome |      -161.62 |        -1.62 |          0.0 |            1 |      
       "description": "Hurst > 0.55 + 5/20 EMA cross on heavy volume",
       "kind": "swing",
       "journal": "data/paper_trades_momentum.json",
-      "realized_pnl": -161.6161616161616,
+      "realized_pnl": 0.0,
       "unrealized_pnl": 0,
-      "total_pnl": -161.6161616161616,
-      "roi_pct": -1.6161616161616161,
+      "total_pnl": 0.0,
+      "roi_pct": 0.0,
       "win_rate_pct": 0.0,
-      "fills": 1,
-      "n_closed": 1,
+      "fills": 0,
+      "n_closed": 0,
       "fees_paid": 0.0,
-      "max_drawdown_pct": 1.7154389505549914,
-      "equity": 9838.38383838384,
+      "max_drawdown_pct": 0.0,
+      "equity": 10000.0,
       "bankroll": 10000.0,
-      "cash": 9838.38383838384
+      "cash": 10000.0
     },
     {
       "profile": "profile_swing_confluence",
