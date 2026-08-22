@@ -1,13 +1,13 @@
 {
-  "updated_at": "2026-08-22T12:22:33.644874+00:00",
+  "updated_at": "2026-08-22T17:29:11.116791+00:00",
   "bankroll_initial": 10000.0,
-  "cash": 10000.0,
-  "equity": 10000.0,
-  "realized_pnl": 0.0,
-  "unrealized_pnl": 0,
-  "ticks_seen": 90,
-  "signals_fired": 0,
-  "fills": 0,
+  "cash": 9498.135700017601,
+  "equity": 9998.694480252294,
+  "realized_pnl": -1.9624210341050343,
+  "unrealized_pnl": 0.6569012863972341,
+  "ticks_seen": 106,
+  "signals_fired": 3,
+  "fills": 3,
   "min_ev_pct": 5.0,
   "config": {
     "bankroll": 10000.0,
@@ -43,10 +43,127 @@
     "confluence_volume_usd": 25000.0,
     "confluence_book_min": 2.5
   },
-  "open_positions": [],
-  "closed_positions": [],
-  "recent_signals": [],
+  "open_positions": [
+    {
+      "position_id": "446c26ac",
+      "strategy": "mean_reversion",
+      "token_id": "65176072261324737856085688071627118509549293922582857186996392180609764586527",
+      "condition_id": "0xe6bcc2f1dd025ce5e1833190f7c60a71171c94f805df55b9ab0ded695ec93565",
+      "entry_ts": 1787416729.893,
+      "entry_price": 0.761,
+      "shares": 656.9012863972335,
+      "notional": 499.9018789482947,
+      "target_price": 0.9132,
+      "stop_price": 0.6849000000000001,
+      "trailing_stop": 0.7614285714285715,
+      "mark_price": 0.762,
+      "status": "open",
+      "exit_ts": null,
+      "exit_price": null,
+      "exit_reason": null,
+      "realized_pnl": null,
+      "reason": "oversold rsi=18.2",
+      "unrealized_pnl": 0.6569012863972341,
+      "return_pct": 0.001314060446780553
+    }
+  ],
+  "closed_positions": [
+    {
+      "position_id": "dd7d217c",
+      "strategy": "mean_reversion",
+      "token_id": "65176072261324737856085688071627118509549293922582857186996392180609764586527",
+      "condition_id": "0xe6bcc2f1dd025ce5e1833190f7c60a71171c94f805df55b9ab0ded695ec93565",
+      "entry_ts": 1787407725.653,
+      "entry_price": 0.767,
+      "shares": 651.8904823989569,
+      "notional": 499.99999999999994,
+      "target_price": 0.9204,
+      "stop_price": 0.6903,
+      "trailing_stop": 0.7664285714285715,
+      "mark_price": 0.766,
+      "status": "stop_loss",
+      "exit_ts": 1787408491.882,
+      "exit_price": 0.766,
+      "exit_reason": "stop_loss",
+      "realized_pnl": -0.651890482398926,
+      "reason": "oversold rsi=5.6",
+      "unrealized_pnl": 0.0,
+      "return_pct": -0.001303780964797915
+    },
+    {
+      "position_id": "f173aebf",
+      "strategy": "mean_reversion",
+      "token_id": "65176072261324737856085688071627118509549293922582857186996392180609764586527",
+      "condition_id": "0xe6bcc2f1dd025ce5e1833190f7c60a71171c94f805df55b9ab0ded695ec93565",
+      "entry_ts": 1787413512.77,
+      "entry_price": 0.763,
+      "shares": 655.2652758530538,
+      "notional": 499.96740547588007,
+      "target_price": 0.9156,
+      "stop_price": 0.6867,
+      "trailing_stop": 0.7627142857142857,
+      "mark_price": 0.761,
+      "status": "stop_loss",
+      "exit_ts": 1787416729.893,
+      "exit_price": 0.761,
+      "exit_reason": "stop_loss",
+      "realized_pnl": -1.3105305517061083,
+      "reason": "oversold rsi=22.2",
+      "unrealized_pnl": 0.0,
+      "return_pct": -0.0026212319790301464
+    }
+  ],
+  "recent_signals": [
+    {
+      "strategy": "mean_reversion",
+      "token_id": "65176072261324737856085688071627118509549293922582857186996392180609764586527",
+      "condition_id": "0xe6bcc2f1dd025ce5e1833190f7c60a71171c94f805df55b9ab0ded695ec93565",
+      "ts": 1787407725.653,
+      "entry_price": 0.767,
+      "target_price": 0.9204,
+      "stop_price": 0.6903,
+      "reason": "oversold rsi=5.6",
+      "indicators": {
+        "rsi": 5.555555555555571,
+        "bb_mid": null,
+        "bb_lower": null,
+        "liquidity_usd": 50000.0
+      }
+    },
+    {
+      "strategy": "mean_reversion",
+      "token_id": "65176072261324737856085688071627118509549293922582857186996392180609764586527",
+      "condition_id": "0xe6bcc2f1dd025ce5e1833190f7c60a71171c94f805df55b9ab0ded695ec93565",
+      "ts": 1787413512.77,
+      "entry_price": 0.763,
+      "target_price": 0.9156,
+      "stop_price": 0.6867,
+      "reason": "oversold rsi=22.2",
+      "indicators": {
+        "rsi": 22.222222222222214,
+        "bb_mid": 0.7665000000000001,
+        "bb_lower": 0.7628342804253463,
+        "liquidity_usd": 50000.0
+      }
+    },
+    {
+      "strategy": "mean_reversion",
+      "token_id": "65176072261324737856085688071627118509549293922582857186996392180609764586527",
+      "condition_id": "0xe6bcc2f1dd025ce5e1833190f7c60a71171c94f805df55b9ab0ded695ec93565",
+      "ts": 1787416729.893,
+      "entry_price": 0.761,
+      "target_price": 0.9132,
+      "stop_price": 0.6849000000000001,
+      "reason": "oversold rsi=18.2",
+      "indicators": {
+        "rsi": 18.181818181818173,
+        "bb_mid": 0.7654499999999999,
+        "bb_lower": 0.7606103848293484,
+        "liquidity_usd": 50000.0
+      }
+    }
+  ],
   "profile": "profile_rsi_mean_reversion",
-  "max_drawdown_pct": 0.0,
-  "peak_equity": 10000.0
+  "max_drawdown_pct": 0.026141411031327434,
+  "peak_equity": 10000.651890482399
 }
