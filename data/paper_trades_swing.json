@@ -1,13 +1,13 @@
 {
-  "updated_at": "2026-08-23T11:37:54.415819+00:00",
+  "updated_at": "2026-08-23T17:29:41.371582+00:00",
   "bankroll_initial": 10000.0,
-  "cash": 10000.0,
+  "cash": 9500.0,
   "equity": 10000.0,
   "realized_pnl": 0.0,
-  "unrealized_pnl": 0,
-  "ticks_seen": 84,
-  "signals_fired": 0,
-  "fills": 0,
+  "unrealized_pnl": 0.0,
+  "ticks_seen": 148,
+  "signals_fired": 1,
+  "fills": 1,
   "min_ev_pct": 5.0,
   "config": {
     "bankroll": 10000.0,
@@ -43,9 +43,54 @@
     "confluence_volume_usd": 25000.0,
     "confluence_book_min": 2.5
   },
-  "open_positions": [],
+  "open_positions": [
+    {
+      "position_id": "b4dd478e",
+      "strategy": "confluence",
+      "token_id": "65176072261324737856085688071627118509549293922582857186996392180609764586527",
+      "condition_id": "0xe6bcc2f1dd025ce5e1833190f7c60a71171c94f805df55b9ab0ded695ec93565",
+      "entry_ts": 1787504560.346,
+      "entry_price": 0.777,
+      "shares": 643.5006435006435,
+      "notional": 500.0,
+      "target_price": 0.9324,
+      "stop_price": 0.6993,
+      "trailing_stop": 0.6993,
+      "mark_price": 0.777,
+      "status": "open",
+      "exit_ts": null,
+      "exit_price": null,
+      "exit_reason": null,
+      "realized_pnl": null,
+      "reason": "confluence[2]: bid/ask=20.00x; rsi=20.0<30",
+      "unrealized_pnl": 0.0,
+      "return_pct": 0.0
+    }
+  ],
   "closed_positions": [],
-  "recent_signals": [],
+  "recent_signals": [
+    {
+      "strategy": "confluence",
+      "token_id": "65176072261324737856085688071627118509549293922582857186996392180609764586527",
+      "condition_id": "0xe6bcc2f1dd025ce5e1833190f7c60a71171c94f805df55b9ab0ded695ec93565",
+      "ts": 1787504560.346,
+      "entry_price": 0.777,
+      "target_price": 0.9324,
+      "stop_price": 0.6993,
+      "reason": "confluence[2]: bid/ask=20.00x; rsi=20.0<30",
+      "indicators": {
+        "n_legs": 2,
+        "legs": [
+          "signal_liquidity",
+          "signal_rsi"
+        ],
+        "rsi": 20.0,
+        "ema_fast": 0.7783083687558923,
+        "ema_slow": null,
+        "atr": 0.0010714285714285723
+      }
+    }
+  ],
   "profile": "profile_swing_confluence",
   "max_drawdown_pct": 0.0,
   "peak_equity": 10000.0

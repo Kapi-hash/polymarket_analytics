@@ -4,9 +4,9 @@
      profile |       PnL($) |         ROI% |         Win% |        fills |      fees($) |       maxDD% |       equity
 ------------ | ------------ | ------------ | ------------ | ------------ | ------------ | ------------ | ------------
 profile_whal |        +0.00 |        +0.00 |          0.0 |            0 |       0.0000 |         0.00 |     10000.00
-profile_rsi_ |        +0.00 |        +0.00 |          0.0 |            0 |       0.0000 |         0.00 |     10000.00
+profile_rsi_ |        +0.00 |        +0.00 |          0.0 |            1 |       0.0000 |         0.00 |     10000.00
 profile_mome |        +0.00 |        +0.00 |          0.0 |            0 |       0.0000 |         0.00 |     10000.00
-profile_swin |        +0.00 |        +0.00 |          0.0 |            0 |       0.0000 |         0.00 |     10000.00
+profile_swin |        +0.00 |        +0.00 |          0.0 |            1 |       0.0000 |         0.00 |     10000.00
 ================================================================================================
 {
   "ok": true,
@@ -36,17 +36,17 @@ profile_swin |        +0.00 |        +0.00 |          0.0 |            0 |      
       "kind": "swing",
       "journal": "data/paper_trades_rsi.json",
       "realized_pnl": 0.0,
-      "unrealized_pnl": 0,
+      "unrealized_pnl": 0.0,
       "total_pnl": 0.0,
       "roi_pct": 0.0,
       "win_rate_pct": 0.0,
-      "fills": 0,
+      "fills": 1,
       "n_closed": 0,
       "fees_paid": 0.0,
       "max_drawdown_pct": 0.0,
       "equity": 10000.0,
       "bankroll": 10000.0,
-      "cash": 10000.0
+      "cash": 9500.0
     },
     {
       "profile": "profile_momentum_drift",
@@ -72,17 +72,17 @@ profile_swin |        +0.00 |        +0.00 |          0.0 |            0 |      
       "kind": "swing",
       "journal": "data/paper_trades_swing.json",
       "realized_pnl": 0.0,
-      "unrealized_pnl": 0,
+      "unrealized_pnl": 0.0,
       "total_pnl": 0.0,
       "roi_pct": 0.0,
       "win_rate_pct": 0.0,
-      "fills": 0,
+      "fills": 1,
       "n_closed": 0,
       "fees_paid": 0.0,
       "max_drawdown_pct": 0.0,
       "equity": 10000.0,
       "bankroll": 10000.0,
-      "cash": 10000.0
+      "cash": 9500.0
     }
   ]
 }
