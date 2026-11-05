@@ -1,11 +1,11 @@
 {
-  "updated_at": "2026-11-05T04:51:49.699279+00:00",
+  "updated_at": "2026-11-05T18:54:45.944440+00:00",
   "bankroll_initial": 10000.0,
   "cash": 10000.0,
   "equity": 10000.0,
   "realized_pnl": 0.0,
   "unrealized_pnl": 0,
-  "ticks_seen": 53,
+  "ticks_seen": 80,
   "signals_fired": 0,
   "fills": 0,
   "resolutions": 0,
